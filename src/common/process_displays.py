@@ -1,7 +1,4 @@
 import math
-
-
-
 def limit_posi_to_sector(sector_angle_in_deg, direction_in_deg, positions):
     # converts sector angle and direction into radians
     angle_rad = math.radians(sector_angle_in_deg) / 2  # Half on each side
