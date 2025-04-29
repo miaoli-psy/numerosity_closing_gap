@@ -23,29 +23,29 @@ all_displays = all_displays[all_displays['sector_angle'].isin([40, 60, 90, 120, 
 filter = (
     # For sector_angle 40, keep numerosity 5-17
         ((all_displays['sector_angle'] == 40) &
-         (all_displays['numerosity'] >= 5) &
-         (all_displays['numerosity'] <= 13)) |
+         (all_displays['numerosity_limited'] >= 5) &
+         (all_displays['numerosity_limited'] <= 13)) |
 
     # For sector_angle 60, keep numerosity 8-17
         ((all_displays['sector_angle'] == 60) &
-         (all_displays['numerosity'] >= 8) &
-         (all_displays['numerosity'] <= 17)) |
+         (all_displays['numerosity_limited'] >= 8) &
+         (all_displays['numerosity_limited'] <= 17)) |
 
 
         # For sector_angle 90, keep numerosity 13-22
         ((all_displays['sector_angle'] == 90) &
-         (all_displays['numerosity'] >= 13) &
-         (all_displays['numerosity'] <= 22)) |
+         (all_displays['numerosity_limited'] >= 13) &
+         (all_displays['numerosity_limited'] <= 22)) |
 
         # For sector_angle 120, keep numerosity 18-28
         ((all_displays['sector_angle'] == 120) &
-         (all_displays['numerosity'] >= 18) &
-         (all_displays['numerosity'] <= 28)) |
+         (all_displays['numerosity_limited'] >= 18) &
+         (all_displays['numerosity_limited'] <= 28)) |
 
         # For sector_angle 170, keep numerosity 25-39
         ((all_displays['sector_angle'] == 170) &
-         (all_displays['numerosity'] >= 25) &
-         (all_displays['numerosity'] <= 39))
+         (all_displays['numerosity_limited'] >= 25) &
+         (all_displays['numerosity_limited'] <= 39))
 )
 
 # Apply the filter
