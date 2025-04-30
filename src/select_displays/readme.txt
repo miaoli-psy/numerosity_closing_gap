@@ -3,5 +3,7 @@ run get_all_displays.py --> 确保所有的点都在sector里，因为base posi�
 run check_numerosities.py --> 查看在点的位置全部都留在sector之后，点数量的分布
 run check_displays_properties.py -->只留下可能的numerosity和sector_angle。得到displays_withproperties.csv 每一行都包含各种properties
 run match_properties_ran_parallel.py --> 生成需要的displays，confounding factors are matched - not bug free, if no match
-                                          after 5000 sample trials, raise value errors.
+                                          after 10000 sample trials, raise value errors.
 
+run fine_matching.py --> 把match_properties_ran_parallel.py中生成的display进行对比，统计检验，输出每组（e.g. tangental 40 vs. matching radial 40）
+                        对于每个propoerties的均值，t和p
