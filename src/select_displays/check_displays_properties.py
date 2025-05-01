@@ -86,4 +86,4 @@ properties_df = all_displays['all_posis_new'].apply(calculate_properties).apply(
 all_displays = pd.concat([all_displays, properties_df], axis=1)
 
 
-# all_displays.to_csv("displays_withproperties.csv", index=False)
+all_displays.to_csv("displays_withproperties.csv", index=False)

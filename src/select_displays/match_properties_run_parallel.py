@@ -7,13 +7,14 @@ from scipy.stats import ttest_ind
 from joblib import Parallel, delayed
 from tqdm import tqdm
 from datetime import datetime
+import random
 
 # Set working directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 # === SELECT SECTOR ANGLE HERE ===
-sector_input = 40# 40, 60, 90, 120, 170
+sector_input = 60 # 40, 60, 90, 120, 170
 
 # timestamp for unique filenames
 timestamp = datetime.now().strftime('%Y%m%d_%H%M')
@@ -22,7 +23,9 @@ timestamp = datetime.now().strftime('%Y%m%d_%H%M')
 file = 'displays_withproperties.csv'
 all_displays = pd.read_csv(os.path.join(script_dir, file))
 
-n_trials = 10000
+n_trials = random.randint(3000, 5000)
+# n_trials = random.randint(300, 500)
+
 n_jobs = -1  # Use all available cores
 
 # Define sector settings
@@ -136,23 +139,23 @@ best_ref.to_csv(f'reference_sector{sector_input}_{timestamp}.csv', index=False)
 best_match.to_csv(f'matched_sector{sector_input}_{timestamp}.csv', index=False)
 
 # Swapped match
-swap_reference_group = sector_data[
-    (sector_data['arrangement'] == config['match_arrangement']) &
-    (sector_data['numerosity_limited'] == config['ref_num'])
-]
-
-swap_matching_group = sector_data[
-    (sector_data['arrangement'] == config['ref_arrangement']) &
-    (sector_data['numerosity_limited'].isin(matching_numerosities))
-]
-
-best_swap_ref, best_swap_match = match_properties(
-    swap_reference_group,
-    swap_matching_group,
-    n_trials=n_trials,
-    ref_name=f'swap_ref_sector{sector_input}',
-    match_name=f'swap_match_sector{sector_input}'
-)
-
-best_swap_ref.to_csv(f'swap_reference_sector{sector_input}_{timestamp}.csv', index=False)
-best_swap_match.to_csv(f'swap_matched_sector{sector_input}_{timestamp}.csv', index=False)
+# swap_reference_group = sector_data[
+#     (sector_data['arrangement'] == config['match_arrangement']) &
+#     (sector_data['numerosity_limited'] == config['ref_num'])
+# ]
+#
+# swap_matching_group = sector_data[
+#     (sector_data['arrangement'] == config['ref_arrangement']) &
+#     (sector_data['numerosity_limited'].isin(matching_numerosities))
+# ]
+#
+# best_swap_ref, best_swap_match = match_properties(
+#     swap_reference_group,
+#     swap_matching_group,
+#     n_trials=n_trials,
+#     ref_name=f'swap_ref_sector{sector_input}',
+#     match_name=f'swap_match_sector{sector_input}'
+# )
+#
+# best_swap_ref.to_csv(f'swap_reference_sector{sector_input}_{timestamp}.csv', index=False)
+# best_swap_match.to_csv(f'swap_matched_sector{sector_input}_{timestamp}.csv', index=False)
