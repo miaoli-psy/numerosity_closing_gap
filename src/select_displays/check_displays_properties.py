@@ -2,11 +2,21 @@ import sys
 import os
 import pandas as pd
 import ast
+from tqdm import tqdm
+tqdm.pandas()
 from src.common.process_dataframe import insert_new_col
 
-sys.path.append(r'D:\OneDrive\Programming\crwdngnmrsty_displays')
+# windows
+# sys.path.append(r'D:\OneDrive\Programming\crwdngnmrsty_displays')
 
-from src.properties import Properties
+
+# linux
+external_project_root = os.path.abspath("/home/miao/crwdngnmrsty_displays")
+if external_project_root not in sys.path:
+    sys.path.insert(0, external_project_root)
+
+from src.properties import Properties  # your custom class
+
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
@@ -59,6 +69,7 @@ all_displays['extraposis_limited'] = all_displays['extraposis_limited'].apply(as
 all_displays['all_posis_new'] = all_displays.apply(
     lambda row: row['centralposis'] + row['extraposis_limited'], axis=1)
 
+tqdm.pandas(desc="Calculating properties")
 
 def calculate_properties(positions_list):
     try:
@@ -81,9 +92,10 @@ def calculate_properties(positions_list):
         }
 
 # takes about 30min
-properties_df = all_displays['all_posis_new'].apply(calculate_properties).apply(pd.Series)
+# properties_df = all_displays['all_posis_new'].apply(calculate_properties).apply(pd.Series)
+properties_df = all_displays['all_posis_new'].progress_apply(calculate_properties).apply(pd.Series)
 
 all_displays = pd.concat([all_displays, properties_df], axis=1)
 
 
-all_displays.to_csv("displays_withproperties.csv", index=False)
+# all_displays.to_csv("displays_withproperties.csv", index=False)
