@@ -1,161 +1,216 @@
-# file: select_balanced_displays_optimized.py
-
 import pandas as pd
 import numpy as np
-import os
 from scipy.stats import ttest_ind
-from joblib import Parallel, delayed
-from tqdm import tqdm
 from datetime import datetime
-import random
+from tqdm import tqdm
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import multiprocessing
 
-# Set working directory
-script_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(script_dir)
+# === CONFIG ===
+input_file = "displays_withproperties.csv"
+sector_angle = 60
+reference_n_total = 80
+display_n_per_group = 10
+top_k_match_candidates = 30
+match_trials_per_reference = 100
+max_reference_trials = 1000
+p_thresh = 0.08
+properties = ['density', 'convexhull', 'average_spacing', 'average_eccentricity', 'occupancy_area']
+timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+numerosity_dict = {40: 9, 60: 13, 90: 18, 120: 24, 170: 30}
+ref_num = numerosity_dict[sector_angle]
+match_numerosities = [ref_num + i for i in [-4, -3, -2, -1, 1, 2, 3, 4]]
+eps = 1e-6
 
-# === SELECT SECTOR ANGLE HERE ===
-sector_input = 60 # 40, 60, 90, 120, 170
+available_cpus = multiprocessing.cpu_count()
+n_jobs = min(32, available_cpus)  # 你可以改成 8、12、30 等任何你想用的核数
+print(f"🧠 Detected {available_cpus} CPU cores. Using {n_jobs} cores for parallel matching.")
 
-# timestamp for unique filenames
-timestamp = datetime.now().strftime('%Y%m%d_%H%M')
+# === LOAD DATA ===
+df = pd.read_csv(input_file)
+df = df[df['sector_angle'] == sector_angle]
+print('✅ Loaded and filtered df')
 
-# Read displays
-file = 'displays_withproperties.csv'
-all_displays = pd.read_csv(os.path.join(script_dir, file))
 
-n_trials = random.randint(3000, 5000)
-# n_trials = random.randint(300, 500)
+def property_distance(row, ref_mean):
+    return np.sqrt(np.sum([(row[prop] - ref_mean[prop]) ** 2 for prop in properties]))
 
-n_jobs = -1  # Use all available cores
 
-# Define sector settings
-sector_settings = {
-    40: {'ref_arrangement': 'radial', 'ref_num': 9, 'match_arrangement': 'tangential'},
-    60: {'ref_arrangement': 'radial', 'ref_num': 13, 'match_arrangement': 'tangential'},
-    90: {'ref_arrangement': 'radial', 'ref_num': 18, 'match_arrangement': 'tangential'},
-    120: {'ref_arrangement': 'radial', 'ref_num': 24, 'match_arrangement': 'tangential'},
-    170: {'ref_arrangement': 'radial', 'ref_num': 30, 'match_arrangement': 'tangential'}
-}
+def evaluate_match(ref, match):
+    p_vals = {}
+    for prop in properties:
+        _, p = ttest_ind(ref[prop], match[prop], equal_var=False)
+        p_vals[prop] = p
+    n_pass = sum(p > p_thresh for p in p_vals.values())
+    ecc_diff = abs(ref['average_eccentricity'].mean() - match['average_eccentricity'].mean())
+    return n_pass, p_vals, ecc_diff
 
-if sector_input not in sector_settings:
-    raise ValueError(f"Unsupported sector_angle {sector_input}. Choose from: {list(sector_settings.keys())}")
 
-config = sector_settings[sector_input]
+def find_matched_group(ref_group, match_pool, ref_label, match_label):
+    ref_mean = {prop: ref_group[prop].mean() for prop in properties}
+    candidate_groups = {}
 
-# Helper function to perform matching
-def match_properties(reference_group, match_group, n_trials=5000, ref_name='ref', match_name='match'):
-    grouped_match = match_group.groupby('numerosity_limited')
-
-    ref_density_std = reference_group['density'].std()
-    ref_convexhull_std = reference_group['convexhull'].std()
-    ref_spacing_std = reference_group['average_spacing'].std()
-    ref_eccentricity_std = reference_group['average_eccentricity'].std()
-    ref_occupancy_std = reference_group['occupancy_area'].std()
-
-    def try_match(i):
-        try:
-            sampled_match = grouped_match.apply(lambda x: x.sample(n=5, random_state=i)).reset_index(drop=True)
-            if len(reference_group) >= len(sampled_match):
-                ref_sampled = reference_group.sample(n=len(sampled_match), random_state=i).reset_index(drop=True)
-
-                norm_density_diff = abs(ref_sampled['density'].mean() - sampled_match['density'].mean()) / ref_density_std
-                norm_convexhull_diff = abs(ref_sampled['convexhull'].mean() - sampled_match['convexhull'].mean()) / ref_convexhull_std
-                norm_spacing_diff = abs(ref_sampled['average_spacing'].mean() - sampled_match['average_spacing'].mean()) / ref_spacing_std
-                norm_ecc_diff = abs(ref_sampled['average_eccentricity'].mean() - sampled_match['average_eccentricity'].mean()) / ref_eccentricity_std
-                norm_occupancy_diff = abs(ref_sampled['occupancy_area'].mean() - sampled_match['occupancy_area'].mean()) / ref_occupancy_std
-
-                combined_diff = norm_density_diff + norm_convexhull_diff + norm_spacing_diff + norm_ecc_diff + norm_occupancy_diff
-
-                t_density = ttest_ind(ref_sampled['density'], sampled_match['density'], equal_var=False)[1]
-                t_convexhull = ttest_ind(ref_sampled['convexhull'], sampled_match['convexhull'], equal_var=False)[1]
-                t_spacing = ttest_ind(ref_sampled['average_spacing'], sampled_match['average_spacing'], equal_var=False)[1]
-                t_ecc = ttest_ind(ref_sampled['average_eccentricity'], sampled_match['average_eccentricity'], equal_var=False)[1]
-                t_occupancy = ttest_ind(ref_sampled['occupancy_area'], sampled_match['occupancy_area'], equal_var=False)[1]
-
-                if t_density > 0.08 and t_convexhull > 0.08 and t_spacing > 0.08 and t_ecc > 0.08 and t_occupancy > 0.08:
-                    return (combined_diff, ref_sampled, sampled_match, 'full')
-                elif t_density > 0.08 and t_convexhull > 0.08 and t_spacing > 0.08:
-                    reduced_diff = norm_density_diff + norm_convexhull_diff + norm_spacing_diff
-                    return (reduced_diff, ref_sampled, sampled_match, 'reduced')
-                elif t_density > 0.08:
-                    return (norm_density_diff, ref_sampled, sampled_match, 'density_only')
-        except:
-            return None
-
-        return None
-
-    # results = Parallel(n_jobs=n_jobs)(
-    #     delayed(try_match)(i) for i in tqdm(range(n_trials), desc=f"Matching {ref_name} vs {match_name}")
-    # )
+    for num in match_numerosities:
+        sub = match_pool[match_pool['numerosity_limited'] == num].copy()
+        sub['dist'] = sub.apply(lambda row: property_distance(row, ref_mean), axis=1)
+        candidate_groups[num] = sub.sort_values(by="dist").head(top_k_match_candidates).drop(columns="dist")
 
     results = []
-    for i in tqdm(range(n_trials), desc=f"Matching {ref_name} vs {match_name}"):
-        res = try_match(i)
-        if res is not None:
-            results.append(res)
+    for _ in range(match_trials_per_reference):
+        try:
+            matched_parts = [candidate_groups[num].sample(n=display_n_per_group) for num in match_numerosities]
+            matched_group = pd.concat(matched_parts, ignore_index=True)
+            n_pass, p_vals, ecc_diff = evaluate_match(ref_group, matched_group)
 
-    if not results:
-        raise ValueError(
-            f"No valid matching found for {ref_name} and {match_name} after all trials.")
+            radial_ecc = ref_group['average_eccentricity'].mean() if ref_label == 'radial' else matched_group['average_eccentricity'].mean()
+            tangential_ecc = matched_group['average_eccentricity'].mean() if ref_label == 'radial' else ref_group['average_eccentricity'].mean()
 
-    best_result = min(results, key=lambda x: x[0])
-    return best_result[1], best_result[2]
+            # success = (n_pass == 5) or (n_pass == 4 and radial_ecc > tangential_ecc)
 
-    valid_results = [res for res in results if res is not None]
+            # Strict success (all p-values > threshold)
+            strict_success = all(p > p_thresh for p in p_vals.values())
 
-    if not valid_results:
-        raise ValueError(f"No valid matching found for {ref_name} and {match_name} after all trials.")
+            # Fallback criteria: 4 pass + radial_ecc > tangential_ecc
+            fallback_success = (n_pass == 4 and radial_ecc > tangential_ecc)
 
-    best_result = min(valid_results, key=lambda x: x[0])
-    return best_result[1], best_result[2]
+            # Final label
+            success = strict_success
 
-# --- Run Matching for Selected Sector ---
+            results.append({
+                'ref': ref_group,
+                'match': matched_group,
+                'p_vals': p_vals,
+                'n_pass': n_pass,
+                'ecc_diff': ecc_diff,
+                'radial_ecc': radial_ecc,
+                'tangential_ecc': tangential_ecc,
+                'success': success
+            })
 
-sector_data = all_displays[all_displays['sector_angle'] == sector_input]
+            if success:
+                return results[-1]  # Return first success early
+        except:
+            continue
+    return results  # fallback list
 
-# Reference group
-reference_group = sector_data[
-    (sector_data['arrangement'] == config['ref_arrangement']) &
-    (sector_data['numerosity_limited'] == config['ref_num'])
-]
 
-# Matching group (ref +/- 1~4, excluding ref)
-matching_numerosities = [config['ref_num'] + i for i in [-4, -3, -2, -1, 1, 2, 3, 4]]
-matching_group = sector_data[
-    (sector_data['arrangement'] == config['match_arrangement']) &
-    (sector_data['numerosity_limited'].isin(matching_numerosities))
-]
+# === Parallel worker function ===
+def _parallel_worker(i, ref_pool, match_pool, ref_label, match_label):
+    np.random.seed(100 + i)
+    ref_group = ref_pool.sample(n=reference_n_total, random_state=100 + i).reset_index(drop=True)
+    return find_matched_group(ref_group, match_pool, ref_label, match_label)
 
-# Normal match
-best_ref, best_match = match_properties(
-    reference_group,
-    matching_group,
-    n_trials=n_trials,
-    ref_name=f'ref_sector{sector_input}',
-    match_name=f'match_sector{sector_input}'
-)
 
-best_ref.to_csv(f'reference_sector{sector_input}_{timestamp}.csv', index=False)
-best_match.to_csv(f'matched_sector{sector_input}_{timestamp}.csv', index=False)
+# === Parallel match executor ===
+def run_full_match_parallel(direction_name, ref_pool, match_pool, ref_label, match_label, filename_prefix, no_prefix=False, n_jobs=8):
+    print(f"\n🔎 Matching for: {direction_name}")
+    fallback_results = []
 
-# Swapped match
-# swap_reference_group = sector_data[
-#     (sector_data['arrangement'] == config['match_arrangement']) &
-#     (sector_data['numerosity_limited'] == config['ref_num'])
-# ]
-#
-# swap_matching_group = sector_data[
-#     (sector_data['arrangement'] == config['ref_arrangement']) &
-#     (sector_data['numerosity_limited'].isin(matching_numerosities))
-# ]
-#
-# best_swap_ref, best_swap_match = match_properties(
-#     swap_reference_group,
-#     swap_matching_group,
-#     n_trials=n_trials,
-#     ref_name=f'swap_ref_sector{sector_input}',
-#     match_name=f'swap_match_sector{sector_input}'
-# )
-#
-# best_swap_ref.to_csv(f'swap_reference_sector{sector_input}_{timestamp}.csv', index=False)
-# best_swap_match.to_csv(f'swap_matched_sector{sector_input}_{timestamp}.csv', index=False)
+    with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+        futures = [executor.submit(_parallel_worker, i, ref_pool, match_pool, ref_label, match_label)
+                   for i in range(max_reference_trials)]
+
+        for future in tqdm(as_completed(futures), total=max_reference_trials, desc="Reference sampling"):
+            result = future.result()
+
+            # ✅ 严格成功：所有 p > threshold
+            if isinstance(result, dict) and result['success']:
+                print(f"\n✅ Match success with p-values (all p > {p_thresh}):")
+
+                for prop in properties:
+                    ref_mean = result['ref'][prop].mean()
+                    match_mean = result['match'][prop].mean()
+                    print(f"{prop:<22} p = {result['p_vals'][prop]:.4f} | mean_ref = {ref_mean:.3f} | mean_match = {match_mean:.3f}")
+
+                symbol = '>' if result['radial_ecc'] > result['tangential_ecc'] else '<'
+                print(f"average_eccentricity: radial = {result['radial_ecc']:.4f} {symbol} tangential = {result['tangential_ecc']:.4f}")
+
+                ref_name = f"{filename_prefix}reference_sector{sector_angle}_{timestamp}.csv"
+                match_name = f"{filename_prefix}matched_sector{sector_angle}_{timestamp}.csv"
+                if no_prefix:
+                    ref_name = f"reference_sector{sector_angle}_{timestamp}.csv"
+                    match_name = f"matched_sector{sector_angle}_{timestamp}.csv"
+
+                result['ref'].to_csv(ref_name, index=False)
+                result['match'].to_csv(match_name, index=False)
+
+                executor.shutdown(wait=False, cancel_futures=True)  # 🔥 主动关闭还未执行的任务
+                return  # ✅ 提前终止函数
+
+            elif isinstance(result, list):
+                fallback_results.extend(result)
+
+    # === fallback 匹配 ===
+    fallback_candidates = [r for r in fallback_results if r['n_pass'] == 4 and r['radial_ecc'] > r['tangential_ecc']]
+    if fallback_candidates:
+        fallback_candidates.sort(key=lambda x: x['ecc_diff'])
+        selected = fallback_candidates[0]
+
+        print(f"\n⚠️ Fallback match selected (4 pass + radial_ecc > tangential):")
+        for prop in properties:
+            ref_mean = selected['ref'][prop].mean()
+            match_mean = selected['match'][prop].mean()
+            print(f"{prop:<22} p = {selected['p_vals'][prop]:.4f} | mean_ref = {ref_mean:.3f} | mean_match = {match_mean:.3f}")
+
+        symbol = '>' if selected['radial_ecc'] > selected['tangential_ecc'] else '<'
+        print(f"average_eccentricity: radial = {selected['radial_ecc']:.4f} {symbol} tangential = {selected['tangential_ecc']:.4f}")
+
+        ref_name = f"{filename_prefix}reference_sector{sector_angle}_{timestamp}.csv"
+        match_name = f"{filename_prefix}matched_sector{sector_angle}_{timestamp}.csv"
+        if no_prefix:
+            ref_name = f"reference_sector{sector_angle}_{timestamp}.csv"
+            match_name = f"matched_sector{sector_angle}_{timestamp}.csv"
+
+        selected['ref'].to_csv(ref_name, index=False)
+        selected['match'].to_csv(match_name, index=False)
+        return  # ✅ fallback 成功也提前退出
+
+    # === fallback 失败 ===
+    # === fallback 匹配 ===
+    fallback_candidates = [r for r in fallback_results if
+                           r['n_pass'] == 4 and r['radial_ecc'] > r['tangential_ecc']]
+    if fallback_candidates:
+        fallback_candidates.sort(key=lambda x: x['ecc_diff'])
+        selected = fallback_candidates[0]
+
+        print(f"\n⚠️ Fallback match selected (4 pass + radial_ecc > tangential):")
+    else:
+        # 🚨 fallback 失败，执行最终保障策略：选出 ecc_diff 最小的一组
+        print(
+            f"\n🔁 All strict and fallback matches failed. Using closest match by average_eccentricity difference.")
+        fallback_results.sort(key=lambda x: x['ecc_diff'])
+        selected = fallback_results[0]
+
+    # ✅ 统一输出保存逻辑
+    for prop in properties:
+        ref_mean = selected['ref'][prop].mean()
+        match_mean = selected['match'][prop].mean()
+        print(
+            f"{prop:<22} p = {selected['p_vals'][prop]:.4f} | mean_ref = {ref_mean:.3f} | mean_match = {match_mean:.3f}")
+
+    symbol = '>' if selected['radial_ecc'] > selected['tangential_ecc'] else '<'
+    print(
+        f"average_eccentricity: radial = {selected['radial_ecc']:.4f} {symbol} tangential = {selected['tangential_ecc']:.4f}")
+
+    ref_name = f"{filename_prefix}reference_sector{sector_angle}_{timestamp}.csv"
+    match_name = f"{filename_prefix}matched_sector{sector_angle}_{timestamp}.csv"
+    if no_prefix:
+        ref_name = f"reference_sector{sector_angle}_{timestamp}.csv"
+        match_name = f"matched_sector{sector_angle}_{timestamp}.csv"
+
+    selected['ref'].to_csv(ref_name, index=False)
+    selected['match'].to_csv(match_name, index=False)
+    return
+
+
+# === MAIN EXECUTION ===
+if __name__ == "__main__":
+    # MATCHING 1: radial → tangential
+    ref_pool_1 = df[(df['arrangement'] == 'radial') & (df['numerosity_limited'] == ref_num)]
+    match_pool_1 = df[(df['arrangement'] == 'tangential') & (df['numerosity_limited'].isin(match_numerosities))]
+    run_full_match_parallel("radial → tangential", ref_pool_1, match_pool_1, ref_label="radial", match_label="tangential", filename_prefix="", no_prefix=True, n_jobs=n_jobs)
+
+    # MATCHING 2: tangential → radial
+    ref_pool_2 = df[(df['arrangement'] == 'tangential') & (df['numerosity_limited'] == ref_num)]
+    match_pool_2 = df[(df['arrangement'] == 'radial') & (df['numerosity_limited'].isin(match_numerosities))]
+    run_full_match_parallel("tangential → radial", ref_pool_2, match_pool_2, ref_label="tangential", match_label="radial", filename_prefix="swap_",n_jobs=n_jobs)
