@@ -1,13 +1,14 @@
 #从生成的原始displays中，选出需要的sector_angle和direction。
 
-setwd("d:/OneDrive/projects/numerosity_closing_gap/displays/displays_n5000/")
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
+# setwd("d:/OneDrive/projects/numerosity_closing_gap/displays/displays_n5000/")
 
-folder_path <- "d:/OneDrive/projects/numerosity_closing_gap/displays/displays_n5000/"
+folder_path <- "../../displays/displays_n200000/"
 
 # Parameters to filter (can be vectors)
 arrangement <- c("radial", "tangential")  
-sector_angle <- c(60, 120)                
-# sector_angle <- c(40, 60, 90, 120, 170)                
+# sector_angle <- c(120)                
+sector_angle <- c(40, 60, 90, 120, 170)
 direction <- c(0, 180)    
 
 # # Allowed numerosity per sector angle
@@ -36,7 +37,7 @@ for (A in arrangement) {
   }
 }
 
-save_folder <-"d:/OneDrive/projects/numerosity_closing_gap/displays/displays/"
+save_folder <-"../../displays/displays/"
 
 # Read files
 # add cols, filter numerosity, and save
