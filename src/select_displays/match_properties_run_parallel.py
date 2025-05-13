@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from joblib import executor
 from scipy.stats import ttest_ind
 from datetime import datetime
 from tqdm import tqdm
@@ -8,24 +9,38 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 import multiprocessing
 import psutil
 
+
 # === CONFIG ===
 reference_n_total = 80
 display_n_per_group = 10
 top_k_match_candidates = 30
 match_trials_per_reference = 100
-max_reference_trials = 5000
-p_thresh = 0.08
+max_reference_trials = 2000
+p_thresh = 0.05
 properties = ['density', 'convexhull', 'average_spacing', 'average_eccentricity', 'occupancy_area']
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 numerosity_dict = {40: 9, 60: 13, 90: 18, 120: 24, 170: 30}
 
-def estimate_safe_n_jobs(estimated_memory_per_process_mb=700, memory_safety_margin=0.5, hard_limit=16):
+hard_limit = 10
+
+def estimate_safe_n_jobs(estimated_memory_per_process_mb=700, memory_safety_margin=0.5, hard_limit=hard_limit):
+    # 可用总内存（MB）
     total_memory = psutil.virtual_memory().total / (1024**2)
     memory_for_pool = total_memory * memory_safety_margin
+
+    # 💡 内存允许开的最大进程数（转换为单位相同的“个”）
     max_jobs_by_memory = int(memory_for_pool / estimated_memory_per_process_mb)
+
+    # 检测到的逻辑核心数
     cpu_count = multiprocessing.cpu_count()
+
+    # 核心安全上限：受限于逻辑核数、内存约束、硬限制
     safe_jobs = min(cpu_count, max_jobs_by_memory, hard_limit)
-    print(f"🧠 Detected {cpu_count} cores, {total_memory:.0f}MB total RAM → using {safe_jobs} cores")
+
+    print(f"Total RAM: {total_memory:.0f}MB → memory allows ~{max_jobs_by_memory} processes")
+    print(f"Detected CPU cores: {cpu_count}")
+    print(f"Hard limit: {hard_limit}")
+    print(f"Safe to use: {safe_jobs} cores")
     return max(1, safe_jobs)
 
 def property_distance(row, ref_mean):
@@ -81,6 +96,7 @@ def _parallel_worker(i, ref_pool, match_pool, ref_label, match_label, match_nume
 def run_full_match_parallel(direction_name, ref_pool, match_pool, ref_label, match_label, filename_prefix, no_prefix, sector_angle, match_numerosities, n_jobs):
     print(f"\n🔎 Matching for: {direction_name}")
     fallback_results = []
+    selected = None
 
     with ProcessPoolExecutor(max_workers=n_jobs) as executor:
         futures = [executor.submit(_parallel_worker, i, ref_pool, match_pool, ref_label, match_label, match_numerosities)
@@ -154,7 +170,7 @@ def load_sector_displays(csv_path, sector_angle, usecols=None, chunksize=5000, c
 
 if __name__ == "__main__":
     csv_file = "displays_withproperties.csv"
-    sector_angle = 170
+    sector_angle = 120
     ref_num = numerosity_dict[sector_angle]
     match_numerosities = [ref_num + i for i in [-4, -3, -2, -1, 1, 2, 3, 4]]
     n_jobs = estimate_safe_n_jobs()
