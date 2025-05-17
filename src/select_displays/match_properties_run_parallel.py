@@ -120,15 +120,13 @@ def run_full_match_parallel(direction_name, ref_pool, match_pool, ref_label, mat
             progress_bar.close()
 
     if selected is None:
-        fallback_candidates = [r for r in fallback_results if r['n_pass'] == 4 and r['radial_ecc'] > r['tangential_ecc']]
-        if fallback_candidates:
-            fallback_candidates.sort(key=lambda x: x['ecc_diff'])
-            selected = fallback_candidates[0]
-            print(f"\n⚠️ Fallback match selected (4 pass + radial_ecc > tangential)")
-        else:
-            print(f"\n🔁 No success/fallback. Using match with min eccentricity diff.")
-            fallback_results.sort(key=lambda x: x['ecc_diff'])
-            selected = fallback_results[0]
+        # fallback 优先用 spacing 和 eccentricity 的 p 值最大作为目标
+        print(f"No strict match. Using fallback with max p(spacing) + p(eccentricity)")
+        fallback_results.sort(
+            key=lambda x: -(x['p_vals']['average_spacing'] + x['p_vals']['average_eccentricity'])
+        )
+        selected = fallback_results[0]
+        print(f"Fallback match selected (max p-values for spacing & eccentricity)")
 
     for prop in properties:
         ref_mean = selected['ref'][prop].mean()
