@@ -11,17 +11,17 @@ import psutil
 
 
 # === CONFIG ===
-reference_n_total = 80
-display_n_per_group = 10
+reference_n_total = 160
+display_n_per_group = 20
 top_k_match_candidates = 30
 match_trials_per_reference = 100
-max_reference_trials = 2000
+max_reference_trials = 5000
 p_thresh = 0.05
 properties = ['density', 'convexhull', 'average_spacing', 'average_eccentricity', 'occupancy_area']
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 numerosity_dict = {40: 9, 60: 13, 90: 18, 120: 24, 170: 30}
 
-hard_limit = 10
+hard_limit = 12
 
 def estimate_safe_n_jobs(estimated_memory_per_process_mb=700, memory_safety_margin=0.5, hard_limit=hard_limit):
     # 可用总内存（MB）
@@ -111,7 +111,7 @@ def run_full_match_parallel(direction_name, ref_pool, match_pool, ref_label, mat
                 selected = result
                 progress_bar.close()
                 print(f"\n✅ Match success with p-values (all p > {p_thresh}):", flush=True)
-                executor.shutdown(wait=False, cancel_futures=True)  # ✅ 立刻中断未完成任务
+                executor.shutdown(wait=False, cancel_futures=True)  # 立刻中断未完成任务
                 break
 
             elif isinstance(result, list):
@@ -135,11 +135,11 @@ def run_full_match_parallel(direction_name, ref_pool, match_pool, ref_label, mat
     symbol = '>' if selected['radial_ecc'] > selected['tangential_ecc'] else '<'
     print(f"average_eccentricity: radial = {selected['radial_ecc']:.4f} {symbol} tangential = {selected['tangential_ecc']:.4f}")
 
-    ref_name = f"{filename_prefix}reference_sector{sector_angle}_{timestamp}.csv"
-    match_name = f"{filename_prefix}matched_sector{sector_angle}_{timestamp}.csv"
+    ref_name = f"{filename_prefix}reference_sector{sector_angle}_nperg{display_n_per_group}_{timestamp}.csv"
+    match_name = f"{filename_prefix}matched_sector{sector_angle}_nperg{display_n_per_group}_{timestamp}.csv"
     if no_prefix:
-        ref_name = f"reference_sector{sector_angle}_{timestamp}.csv"
-        match_name = f"matched_sector{sector_angle}_{timestamp}.csv"
+        ref_name = f"reference_sector{sector_angle}_nperg{display_n_per_group}_{timestamp}.csv"
+        match_name = f"matched_sector{sector_angle}_nperg{display_n_per_group}_{timestamp}.csv"
 
     selected['ref'].to_csv(ref_name, index=False)
     selected['match'].to_csv(match_name, index=False)
@@ -168,7 +168,7 @@ def load_sector_displays(csv_path, sector_angle, usecols=None, chunksize=5000, c
 
 if __name__ == "__main__":
     csv_file = "displays_withproperties.csv"
-    sector_angle = 120
+    sector_angle = 40
     ref_num = numerosity_dict[sector_angle]
     match_numerosities = [ref_num + i for i in [-4, -3, -2, -1, 1, 2, 3, 4]]
     n_jobs = estimate_safe_n_jobs()
