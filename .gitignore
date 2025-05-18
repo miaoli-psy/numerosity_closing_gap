@@ -139,6 +139,7 @@ dmypy.json
 displays/
 archive/
 .idea/
+run_closinggap1/
 
 # R
 .Rhistory

@@ -22,3 +22,14 @@ def limit_posi_to_sector(sector_angle_in_deg, direction_in_deg, positions):
 
 def get_len (posi_list):
     return len(posi_list)
+
+
+def mirror_coords(coords):
+    """
+    将给定的坐标列表关于 x=0 轴（纵轴）做镜像变换。
+
+    input: coords (list of tuple): 原始坐标列表，每个元素为 (x, y)。
+
+    list of tuple: (-x, y)。
+    """
+    return [(-x, y) for x, y in coords]

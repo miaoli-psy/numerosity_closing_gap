@@ -11,12 +11,12 @@ import psutil
 
 
 # === CONFIG ===
-reference_n_total = 160
-display_n_per_group = 20
+reference_n_total = 80
+display_n_per_group = 10
 top_k_match_candidates = 30
 match_trials_per_reference = 100
 max_reference_trials = 5000
-p_thresh = 0.05
+p_thresh = 0.08
 properties = ['density', 'convexhull', 'average_spacing', 'average_eccentricity', 'occupancy_area']
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 numerosity_dict = {40: 9, 60: 13, 90: 18, 120: 24, 170: 30}
@@ -168,7 +168,7 @@ def load_sector_displays(csv_path, sector_angle, usecols=None, chunksize=5000, c
 
 if __name__ == "__main__":
     csv_file = "displays_withproperties.csv"
-    sector_angle = 40
+    sector_angle = 170
     ref_num = numerosity_dict[sector_angle]
     match_numerosities = [ref_num + i for i in [-4, -3, -2, -1, 1, 2, 3, 4]]
     n_jobs = estimate_safe_n_jobs()
@@ -176,8 +176,9 @@ if __name__ == "__main__":
     columns_needed = [
         'sector_angle', 'arrangement', 'numerosity_limited',
         'density', 'convexhull', 'average_spacing',
-        'average_eccentricity', 'occupancy_area'
-    ]
+        'average_eccentricity', 'occupancy_area',
+        'centralposis', 'extraposis', 'visual_field',
+        'extraposis_limited', 'all_posis_new']
 
     df = load_sector_displays(
         csv_file,

@@ -15,7 +15,7 @@ external_project_root = os.path.abspath("/home/miao/crwdngnmrsty_displays")
 if external_project_root not in sys.path:
     sys.path.insert(0, external_project_root)
 
-from src.properties import Properties  # your custom class
+from src.properties import Properties
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
