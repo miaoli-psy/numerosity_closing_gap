@@ -11,7 +11,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 RAW_DISPLAY_NEW_PATH = '../../../../Programming/crwdngnmrsty_displays/src/'
-RAW_DISPLAY_OLD_PATH = '../../displays/displays_n5000/'
+RAW_DISPLAY_OLD_PATH = '../../displays/displays_n200000/'
 
 # Get list of CSVs in NEW directory
 for filename in os.listdir(RAW_DISPLAY_NEW_PATH):

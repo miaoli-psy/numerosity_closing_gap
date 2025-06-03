@@ -7,13 +7,13 @@ tqdm.pandas()
 from src.common.process_dataframe import insert_new_col
 
 # windows
-# sys.path.append(r'D:\OneDrive\Programming\crwdngnmrsty_displays')
+sys.path.append(r'D:\OneDrive\Programming\crwdngnmrsty_displays')
 
 
 # linux
-external_project_root = os.path.abspath("/home/miao/crwdngnmrsty_displays")
-if external_project_root not in sys.path:
-    sys.path.insert(0, external_project_root)
+# external_project_root = os.path.abspath("/home/miao/crwdngnmrsty_displays")
+# if external_project_root not in sys.path:
+#     sys.path.insert(0, external_project_root)
 
 from src.properties import Properties
 

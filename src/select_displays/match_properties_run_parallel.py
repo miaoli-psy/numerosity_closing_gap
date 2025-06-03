@@ -16,12 +16,12 @@ display_n_per_group = 10
 top_k_match_candidates = 30
 match_trials_per_reference = 100
 max_reference_trials = 5000
-p_thresh = 0.08
+p_thresh = 0.05
 properties = ['density', 'convexhull', 'average_spacing', 'average_eccentricity', 'occupancy_area']
 timestamp = datetime.now().strftime("%Y%m%d_%H%M")
 numerosity_dict = {40: 9, 60: 13, 90: 18, 120: 24, 170: 30}
 
-hard_limit = 12
+hard_limit = 32
 
 def estimate_safe_n_jobs(estimated_memory_per_process_mb=700, memory_safety_margin=0.5, hard_limit=hard_limit):
     # 可用总内存（MB）
@@ -167,8 +167,8 @@ def load_sector_displays(csv_path, sector_angle, usecols=None, chunksize=5000, c
     return df
 
 if __name__ == "__main__":
-    csv_file = "displays_withproperties.csv"
-    sector_angle = 170
+    csv_file = "displays_withproperties120.csv"
+    sector_angle = 120
     ref_num = numerosity_dict[sector_angle]
     match_numerosities = [ref_num + i for i in [-4, -3, -2, -1, 1, 2, 3, 4]]
     n_jobs = estimate_safe_n_jobs()
@@ -188,9 +188,9 @@ if __name__ == "__main__":
         refresh_cache=False
     )
 
-    ref_pool_1 = df[(df['arrangement'] == 'radial') & (df['numerosity_limited'] == ref_num)]
-    match_pool_1 = df[(df['arrangement'] == 'tangential') & (df['numerosity_limited'].isin(match_numerosities))]
-    run_full_match_parallel("radial → tangential", ref_pool_1, match_pool_1, "radial", "tangential", "", True, sector_angle, match_numerosities, n_jobs)
+    # ref_pool_1 = df[(df['arrangement'] == 'radial') & (df['numerosity_limited'] == ref_num)]
+    # match_pool_1 = df[(df['arrangement'] == 'tangential') & (df['numerosity_limited'].isin(match_numerosities))]
+    # run_full_match_parallel("radial → tangential", ref_pool_1, match_pool_1, "radial", "tangential", "", True, sector_angle, match_numerosities, n_jobs)
 
     ref_pool_2 = df[(df['arrangement'] == 'tangential') & (df['numerosity_limited'] == ref_num)]
     match_pool_2 = df[(df['arrangement'] == 'radial') & (df['numerosity_limited'].isin(match_numerosities))]

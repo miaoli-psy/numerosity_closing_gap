@@ -8,7 +8,7 @@ folder_path <- "../../displays/displays_n200000/"
 # Parameters to filter (can be vectors)
 arrangement <- c("radial", "tangential")  
 # sector_angle <- c(120)                
-sector_angle <- c(40, 60, 90, 120, 170)
+sector_angle <- c(10, 15, 40, 60, 90, 120, 170)
 direction <- c(0, 180)    
 
 # # Allowed numerosity per sector angle

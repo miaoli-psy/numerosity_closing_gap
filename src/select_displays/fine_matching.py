@@ -17,7 +17,7 @@ directory = os.path.join(script_dir, PATH)
 csv_files = [f for f in os.listdir(directory) if f.endswith('.csv')]
 
 #Pattern to extract type, sector and timestamp
-pattern = re.compile(r'(?P<type>(swap_)?(matched|reference))_sector(?P<sector>\d+)_?(?P<time>\d{8}_\d{4})?.csv')
+pattern = re.compile(r'(?P<type>(swap_)?(matched|reference))_sector(?P<sector>\d+)(?:_[^_]*)*?_(?P<time>\d{8}_\d{4})\.csv')
 
 # Organize files by (type, sector, timestamp)
 file_groups = {}

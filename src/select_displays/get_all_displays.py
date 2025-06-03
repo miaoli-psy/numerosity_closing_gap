@@ -2,21 +2,27 @@
 import os
 import pandas as pd
 import ast
+import numpy as np
 from tqdm import tqdm
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
 from src.common.process_dataframe import insert_new_col, insert_new_col_from_n_cols
 from src.common.process_displays import limit_posi_to_sector, get_len
 
+
+# 移除距离 (0, 0) 小于 100 的点
+def remove_near_origin(pos_list, radius=100):
+    return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) >= radius]
+
 # n_cores
-n_cores = 30
+n_cores = 1
 
 # set current working directory
 script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 # read displays .csv
-PATH = "../../displays/displays/"
+PATH = "../../displays/displays/angle120/"
 dir_list = os.listdir(PATH)
 
 # needed cols
@@ -33,14 +39,22 @@ displays = pd.concat(displays_df, ignore_index = True)
 # displays['centralposis'] = displays['centralposis'].apply(ast.literal_eval)
 # displays['extraposis'] = displays['extraposis'].apply(ast.literal_eval)
 
-def parallel_literal_eval(column_data, desc="Parsing", max_workers=None):
-    max_workers = max_workers or multiprocessing.cpu_count()
-    with ProcessPoolExecutor(max_workers=max_workers) as executor:
-        results = list(tqdm(executor.map(ast.literal_eval, column_data), total=len(column_data), desc=desc))
-    return results
+# def parallel_literal_eval(column_data, desc="Parsing", max_workers=None):
+#     max_workers = max_workers or multiprocessing.cpu_count()
+#     with ProcessPoolExecutor(max_workers=max_workers) as executor:
+#         results = list(tqdm(executor.map(ast.literal_eval, column_data), total=len(column_data), desc=desc))
+#     return results
 
-displays['centralposis'] = parallel_literal_eval(displays['centralposis'], desc="Parsing centralposis", max_workers = n_cores)
-displays['extraposis'] = parallel_literal_eval(displays['extraposis'], desc="Parsing extraposis", max_workers = n_cores)
+# displays['centralposis'] = parallel_literal_eval(displays['centralposis'], desc="Parsing centralposis", max_workers = n_cores)
+# displays['extraposis'] = parallel_literal_eval(displays['extraposis'], desc="Parsing extraposis", max_workers = n_cores)
+
+# convert position strings to lists
+displays['centralposis'] = displays['centralposis'].apply(ast.literal_eval)
+displays['extraposis'] = displays['extraposis'].apply(ast.literal_eval)
+
+# remove fovea region
+displays['centralposis'] = displays['centralposis'].apply(remove_near_origin)
+displays['extraposis'] = displays['extraposis'].apply(remove_near_origin)
 
 # extra_posits might be outside the sector - limited it
 insert_new_col_from_n_cols(displays, ['sector_angle', 'visual_field', 'extraposis'], 'extraposis_limited', limit_posi_to_sector)
@@ -52,4 +66,4 @@ insert_new_col(displays, 'extraposis_limited', 'len_extra_posi', get_len)
 displays['numerosity_limited'] = displays['numerosity']/3 + displays['len_extra_posi']
 
 
-# displays.to_csv("displays.csv", index=False)
+displays.to_csv("displays120.csv", index=False)

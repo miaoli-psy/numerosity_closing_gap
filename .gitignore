@@ -140,6 +140,7 @@ displays/
 archive/
 .idea/
 run_closinggap1/
+cache/
 
 # R
 .Rhistory
