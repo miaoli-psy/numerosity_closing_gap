@@ -14,6 +14,10 @@ from src.common.process_displays import limit_posi_to_sector, get_len
 def remove_near_origin(pos_list, radius=100):
     return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) >= radius]
 
+def remove_outside_radius(pos_list, radius=530):
+    return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) <= radius]
+
+
 # n_cores
 n_cores = 1
 
@@ -22,7 +26,7 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(script_dir)
 
 # read displays .csv
-PATH = "../../displays/displays/angle120/"
+PATH = "../../displays/displays/angle170/"
 dir_list = os.listdir(PATH)
 
 # needed cols
@@ -56,6 +60,10 @@ displays['extraposis'] = displays['extraposis'].apply(ast.literal_eval)
 displays['centralposis'] = displays['centralposis'].apply(remove_near_origin)
 displays['extraposis'] = displays['extraposis'].apply(remove_near_origin)
 
+# no discs outside 540
+displays['centralposis'] = displays['centralposis'].apply(remove_outside_radius)
+displays['extraposis'] = displays['extraposis'].apply(remove_outside_radius)
+
 # extra_posits might be outside the sector - limited it
 insert_new_col_from_n_cols(displays, ['sector_angle', 'visual_field', 'extraposis'], 'extraposis_limited', limit_posi_to_sector)
 
@@ -66,4 +74,4 @@ insert_new_col(displays, 'extraposis_limited', 'len_extra_posi', get_len)
 displays['numerosity_limited'] = displays['numerosity']/3 + displays['len_extra_posi']
 
 
-displays.to_csv("displays120.csv", index=False)
+displays.to_csv("displays170.csv", index=False)
