@@ -1,6 +1,6 @@
 """
 得到psychopy需要的enumeration task的condition file
-每个arrangement保留3,4,5,6各10行每个arrangement
+RM range 3-6 with our custom algorithm.
 """
 
 import os
@@ -8,23 +8,7 @@ import pandas as pd
 import numpy as np
 import ast
 
-# === CONFIGURATION ===
-save_to_csv = True
-
-# 文件路径设置
-script_dir = os.path.dirname(os.path.abspath(__file__))
-os.chdir(script_dir)
-
-INPUT_DIR = "../../displays/selected/select_angle15_enumeration_task/"
-filename = "displays_angle15.csv"
-file_path = os.path.join(INPUT_DIR, filename)
-
-PROCESSED_DIR = os.path.join(script_dir, "merged_numtask")
-os.makedirs(PROCESSED_DIR, exist_ok=True)
-output_file = f"processed_{filename}"
-output_path = os.path.join(PROCESSED_DIR, output_file)
-
-# === 旋转函数 ===
+# === functions ===
 def rotate_point(x, y, theta_deg):
     theta_rad = np.radians(theta_deg)
     cos_theta = np.cos(theta_rad)
@@ -36,53 +20,116 @@ def rotate_point(x, y, theta_deg):
 def rotate_positions(pos_list, angle_deg):
     return [rotate_point(x, y, angle_deg) for x, y in pos_list]
 
-# === 检查所有点是否在屏幕可见范围内（考虑圆半径 9.15）===
-def all_points_on_screen(pos_list, margin=9.15):
-    return all(
-        -960 + margin <= x <= 960 - margin and
-        -540 + margin <= y <= 540 - margin
-        for (x, y) in pos_list
-    )
+def all_points_on_screen(pos_list, margin=10):
+    return all(np.hypot(x, y) <= (540 - margin) for (x, y) in pos_list)
+rows = []
 
-# === STEP 1: 读取原始数据 ===
-print(f"loading：{file_path}")
-df = pd.read_csv(file_path)
+# === CONFIGURATION ===
+save_to_csv = False
 
-# 删除 visual_field == 180 的行
-df = df[df['visual_field'] != 180]
+# paths
+script_dir = os.path.dirname(os.path.abspath(__file__))
+os.chdir(script_dir)
 
-# 解析 central 和 extra 坐标
-df['centralposis'] = df['centralposis'].apply(ast.literal_eval)
-df['extraposis_limited'] = df['extraposis_limited'].apply(ast.literal_eval)
+INPUT_DIR = "../../displays/selected/select_angle5_enumeration_task/"
+input_files = [
+    "ws1_tangential_angle5_drctn0.csv",
+    "ws1_radial_angle5_drctn0.csv"
+]
 
-# 生成 allposis1
-df['allposis1'] = df.apply(lambda row: row['centralposis'] + row['extraposis_limited'], axis=1)
+PROCESSED_DIR = os.path.join(script_dir, "merged_numtask")
+os.makedirs(PROCESSED_DIR, exist_ok=True)
+output_file = "processed_combined_angle5.csv"
+output_path = os.path.join(PROCESSED_DIR, output_file)
 
-# 生成 allposis2 ~ allposis24
-for i in range(2, 25):
-    angle = (i - 1) * 15
-    df[f'allposis{i}'] = df['allposis1'].apply(lambda posis: rotate_positions(posis, angle))
+# === Position set columns to extract ===
+pos_cols = [
+    "n3_posis_close", "n3_posis_far",
+    "n4_posis_close", "n4_posis_far", "n4_posis_both",
+    "n5_posis_close", "n5_posis_far"
+]
 
-# === STEP 2: 过滤所有有任何越界坐标的行 ===
+# === Collect reformatted rows from both files ===
+rows = []
+for filename in input_files:
+    file_path = os.path.join(INPUT_DIR, filename)
+    df = pd.read_csv(file_path)
+    df = df[df["numerosity"] == 6]  # keep only rows with numerosity == 6  # remove rows with numerosity == 3
+
+    for _, row in df.iterrows():
+        for col in pos_cols:
+            val = row.get(col, None)
+            if pd.isna(val) or val == "None":
+                continue
+            try:
+                posis = ast.literal_eval(val)
+            except Exception:
+                continue
+            if not all_points_on_screen(posis):
+                continue
+            rows.append({
+                    "winsize": row["winsize"],
+                    "protectzonetype": row["protectzonetype"],
+                    "posis": posis,
+                "numerosity": len(posis),
+                "type": col.split("_")[-1]  # keep only 'close', 'far', or 'both'
+            })
+
+        # Add n6_posis_both = n3_posis_close + n3_posis_far
+        try:
+            close = ast.literal_eval(row["n3_posis_close"])
+            far = ast.literal_eval(row["n3_posis_far"])
+            combined = close + far
+            if not all_points_on_screen(combined):
+                continue
+            rows.append({
+                "winsize": row["winsize"],
+                "protectzonetype": row["protectzonetype"],
+                "posis": combined,
+                "numerosity": len(combined),
+                "type": "both"
+            })
+        except:
+            continue
+# === Build new DataFrame and export ===
+long_df = pd.DataFrame(rows)
+
+# === Sampling rules ===
+sampled_df_list = []
+for ptype in long_df['protectzonetype'].unique():
+    sub_df = long_df[long_df['protectzonetype'] == ptype]
+    sampled_df_list.extend([
+        sub_df[(sub_df['numerosity'] == 3) & (sub_df['type'] == 'close')].sample(n=30, random_state=42),
+        sub_df[(sub_df['numerosity'] == 3) & (sub_df['type'] == 'far')].sample(n=30, random_state=42),
+        sub_df[(sub_df['numerosity'] == 4) & (sub_df['type'] == 'close')].sample(n=20, random_state=42),
+        sub_df[(sub_df['numerosity'] == 4) & (sub_df['type'] == 'far')].sample(n=20, random_state=42),
+        sub_df[(sub_df['numerosity'] == 4) & (sub_df['type'] == 'both')].sample(n=20, random_state=42),
+        sub_df[(sub_df['numerosity'] == 5) & (sub_df['type'] == 'close')].sample(n=30, random_state=42),
+        sub_df[(sub_df['numerosity'] == 5) & (sub_df['type'] == 'far')].sample(n=30, random_state=42),
+        sub_df[(sub_df['numerosity'] == 6)].sample(n=60, random_state=42)
+    ])
+
+sampled_df = pd.concat(sampled_df_list, ignore_index=True)
+
+# === Generate rotated versions after sampling ===
 for i in range(1, 25):
-    df = df[df[f'allposis{i}'].apply(all_points_on_screen)]
+    angle = (i - 1) * 15
+    sampled_df[f'rotated_posis_{i}'] = sampled_df['posis'].apply(lambda pos: rotate_positions(pos, angle))
 
-# === STEP 3: 抽样每类 numerosity ===
-filtered_df = pd.DataFrame()
-for arr in ['radial', 'tangential']:
-    subset = df[(df['arrangement'] == arr) & (df['numerosity_limited'].isin([3, 4, 5, 6]))]
-    sampled = subset.groupby('numerosity_limited').apply(
-        lambda g: g.sample(n=10, random_state=42)
-    ).reset_index(drop=True)
-    filtered_df = pd.concat([filtered_df, sampled], ignore_index=True)
-
-df = filtered_df
-
-# 删除 visual_field 列
-if 'visual_field' in df.columns:
-    df = df.drop(columns=['visual_field'])
-
-# === STEP 4: 保存清洗后的 CSV 文件 ===
 if save_to_csv:
-    df.to_csv(output_path, index=False)
-    print(f"saved：{output_path}")
+    sampled_df.to_csv(output_path, index=False)
+    print(f"Saved to {output_path}")
+
+    # Split into 4 random chunks of 120 rows each
+    shuffled = sampled_df.sample(frac=1, random_state=123).reset_index(drop=True)
+    for i in range(4):
+        chunk = shuffled.iloc[i * 120:(i + 1) * 120]
+        chunk_file = os.path.join(PROCESSED_DIR, f"processed_chunk_{i+1}.csv")
+        chunk.to_csv(chunk_file, index=False)
+        print(f"Saved chunk {i+1} to {chunk_file}")
+
+
+# the sampled_df is the file that contains 3-6 numerosity for both radial and tangential conditions
+# for each arrangement, 240 rows/trials (30 num3_far, 30 num3_close. 20 num4_far, 20 num4_close, 20 num4_both
+# 30 num5_far. 30 num5_close, 60 num6)
+
