@@ -140,6 +140,8 @@ displays/
 archive/
 .idea/
 run_closinggap1/
+run_closinggap_rm_enumeration/
+consent/
 cache/
 
 # R
