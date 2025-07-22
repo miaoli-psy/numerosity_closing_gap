@@ -53,6 +53,7 @@ if __name__=='__main__':
     insert_new_col_from_n_cols(totalData,
                               ["reportedN", "numerosity"],
                               "deviation", get_deviaion_score)
+    
 
     if to_csv:
         totalData.to_csv('data_RMenumeration.csv', index = False)
