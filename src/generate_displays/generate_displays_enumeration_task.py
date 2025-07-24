@@ -112,8 +112,8 @@ for ptype in long_df['protectzonetype'].unique():
 sampled_df = pd.concat(sampled_df_list, ignore_index=True)
 
 # === Generate rotated versions after sampling ===
-for i in range(1, 25):
-    angle = (i - 1) * 15
+for i in range(1, 9):
+    angle = (i - 1) * 45
     sampled_df[f'rotated_posis_{i}'] = sampled_df['posis'].apply(lambda pos: rotate_positions(pos, angle))
 
 if save_to_csv:
