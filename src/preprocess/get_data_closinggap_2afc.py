@@ -20,6 +20,15 @@ def get_ref_type(swap, cond_file):
 
     return None
 
+def get_probe_type(ref_type):
+    if ref_type == "radial":
+        return "tangential"
+    elif ref_type == "tangential":
+        return "radial"
+    else:
+        return None
+
+
 def get_stimulus_from_response(reference_type, cond_file, swap_type, response_key):
     """
     Determines if the participant chose the probe or reference stimulus
@@ -107,6 +116,9 @@ if __name__ == '__main__':
 
     # add reference_type (reference display arrangement)
     insert_new_col_from_n_cols(totalData, ["swap_r", "cond_file"], "reference_type", get_ref_type)
+
+    # add probe_type
+    insert_new_col_from_n_cols(totalData, ["reference_type"], "probe_type", get_probe_type)
 
     # add participant response
     insert_new_col_from_n_cols(totalData, ["reference_type", "cond_file","swap_type", "key_resp_2.keys"], "choice_display_more", get_stimulus_from_response)
