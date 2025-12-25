@@ -11,7 +11,6 @@ setwd("D:/OneDrive/projects/numerosity_closing_gap/src/analysis/")
 data <- readr::read_csv("D:/OneDrive/projects/numerosity_closing_gap/data/closinggap_2afc/data_closinggap_2afc.csv")
 
 to_remove <- c(911343, 309153)
-
 data <- subset(data, participant != to_remove)
 
 # numerosity range and RM range

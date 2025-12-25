@@ -9,6 +9,7 @@ library(lme4)
 # ==========read data=========
 setwd("D:/OneDrive/projects/numerosity_closing_gap/src/analysis/")
 
+
 # ========Numerosity ranges,  losgistic fitting data======
 fit_psychometric_subj <- readRDS("fit_psychometric_subj.rds")
 
@@ -24,6 +25,7 @@ pses_subj <- fit_psychometric_subj$par %>%
     JND      = log(3) / abs_beta,
     WF       = JND / PSE # use jnd/pse instead of jnd/ref_num
   )
+
 
 pses_subj <- pses_subj %>%
   mutate(slope_at_pse = beta / 4)
@@ -42,6 +44,7 @@ pses_subj <- pses_subj %>%
 
 # remove extreme values: for each ref_num, a pse value was considered an extreme value
 # and excluded if it deviated from the median by more than 2.5 MAD
+
 # MAD: defened as the median of the absolute deviation from that median (better than 3std, 
 # more stable when distribution are non-gaussian)
 # 43 trials out of 330 trials are removed (13.0%)
