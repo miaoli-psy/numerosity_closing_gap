@@ -19,47 +19,54 @@ pses_subj <- fit_psychometric_subj$par %>%
   mutate(
     PSE      = p1,
     beta     = p2,
+    abs_beta = abs(beta),
     PSE_bias = PSE - reference_num,
-    JND      = log(3) / abs(beta),
+    JND      = log(3) / abs_beta,
     WF       = JND / PSE # use jnd/pse instead of jnd/ref_num
   )
 
 pses_subj <- pses_subj %>%
   mutate(slope_at_pse = beta / 4)
 
-# remove participants that unable to do the task
+beta_cutoff <- quantile(pses_subj$abs_beta, probs = 0.05, na.rm = TRUE)
+
+pses_subj <- pses_subj %>%
+  filter(abs_beta > beta_cutoff)
+
+# remove participants that unable to do the task - based on fitting
 to_remove <- c(911343, 309153)
+
 
 pses_subj <- pses_subj %>% 
   filter(!participant %in% to_remove)
 
-
 # remove extreme values: for each ref_num, a pse value was considered an extreme value
-# and excluded if it deviated from the median by more than 3 MAD
+# and excluded if it deviated from the median by more than 2.5 MAD
 # MAD: defened as the median of the absolute deviation from that median (better than 3std, 
 # more stable when distribution are non-gaussian)
+# 43 trials out of 330 trials are removed (13.0%)
+
 
 pses_subj <- pses_subj %>%
   group_by(reference_num) %>%
   mutate(
     pse_med = median(PSE, na.rm = TRUE),
     pse_mad = mad(PSE, na.rm = TRUE),
-    keep    = abs(PSE - pse_med) <= 3 * pse_mad
+    w_med   = median(WF, na.rm = TRUE),
+    w_mad   = mad(WF, na.rm = TRUE),
+    keep    = (abs(PSE - pse_med) <= 2.5 * pse_mad) &
+      (abs(WF  - w_med)  <= 2.5 * w_mad)
   ) %>%
   filter(keep) %>%
   ungroup() %>%
-  select(-pse_med, -pse_mad, -keep)
+  select(-pse_med, -pse_mad, -w_med, -w_mad, -keep)
 
-# pses_subj <- pses_subj %>%
-#   group_by(reference_num) %>%
-#   mutate(
-#     pse_mean = mean(PSE, na.rm = TRUE),
-#     pse_sd   = sd(PSE, na.rm = TRUE),
-#     keep     = abs(PSE - pse_mean) <= 3 * pse_sd
-#   ) %>%
-#   filter(keep) %>%
-#   ungroup() %>%
-#   select(-pse_mean, -pse_sd, -keep)
+
+# write.csv(pses_subj, "pses_subj.csv", row.names = FALSE)
+
+
+table(pses_subj$participant)
+
 
 average_pses_df <- pses_subj %>% 
   group_by(probe_type, reference_num) %>% 
@@ -113,22 +120,22 @@ my_plot_pse <- ggplot()+
       y = PSE_bias_mean,
       ymin = PSE_bias_mean - PSE_CI,
       ymax = PSE_bias_mean + PSE_CI,
-      group = probe_type,
-      color = probe_type
+      group = probe_type
     ),
     size  = 0.8,
     width = .00,
     alpha = 1,
+    color = "black",
     position = position_dodge(width = 0.2)
   ) +
   
-  labs(y = "PSE bias", x = "Reference Numerosity") +
+  labs(y = "PSE bias (PSE - Reference Numerosity)", x = "Reference Numerosity") +
   
   scale_color_manual(labels = c("radial", "tangential"),
                      values = c("#BB5566", "#004488"),
                      name = "Probe Arrangement") +
   
-  scale_y_continuous(limits = c(-10, 10)) +
+  scale_y_continuous(limits = c(-10, 11)) +
   
   theme(
     axis.title.x = element_text(
@@ -155,6 +162,9 @@ my_plot_pse <- ggplot()+
   )
 
 my_plot_pse
+
+# ggsave(file = "my_plot_pse.svg", plot = my_plot_pse, width = 7, height = 5, units = "in")
+
 
 # plot wf
 
@@ -194,12 +204,12 @@ my_plot_wf <- ggplot()+
       y = WF_mean,
       ymin = WF_mean - WF_CI,
       ymax = WF_mean + WF_CI,
-      group = probe_type,
-      color = probe_type
+      group = probe_type
     ),
     size  = 0.8,
     width = .00,
     alpha = 1,
+    color = "black",
     position = position_dodge(width = 0.2)
   ) +
   
@@ -209,7 +219,7 @@ my_plot_wf <- ggplot()+
                      values = c("#BB5566", "#004488"),
                      name = "Probe Arrangement") +
   
-  scale_y_continuous(limits = c(0, 2)) +
+  scale_y_continuous(limits = c(0, 0.6)) +
   
   theme(
     axis.title.x = element_text(
@@ -237,14 +247,10 @@ my_plot_wf <- ggplot()+
 
 my_plot_wf
 
+# ggsave(file = "my_plot_wf.svg", plot = my_plot_wf, width = 7, height = 5, units = "in")
+
 
 # LMM on PSEs
-
-# referece num back to numerical
-pses_subj <- pses_subj %>% 
-  mutate(
-    reference_num = scale(reference_num, scale = FALSE)
-  )
 
 # probe_type to factor
 pses_subj$probe_type <- factor(
@@ -315,8 +321,6 @@ contrast_ref <- emmeans::contrast(
 
 contrast_ref
 
-
-
 # ========RM ranges======
 
 # read data RM range
@@ -326,6 +330,7 @@ data_rm_range <- data %>%
   filter(sector_angle == 0)
 
 to_remove <- c(911343, 309153)
+
 
 data_rm_range <- data_rm_range %>% 
   filter(!participant %in% to_remove)
@@ -384,7 +389,7 @@ plot_rm2 <- ggplot() +
       group = probe_type
     ),
     size = 4,
-    alpha = 1,
+    alpha = 0.8,
     stat = "identity",
     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
   ) +
@@ -395,12 +400,14 @@ plot_rm2 <- ggplot() +
                     y = mean_prop_probe,
                     ymin = mean_prop_probe - ci,
                     ymax = mean_prop_probe + ci,
-                    group = probe_type,
-                    color = probe_type),
-                
-                size  = 0.5,
+                    group = probe_type
+                    ),
+                size  = 0.8,
                 width = .00,
-                position = position_dodge(0.2)) +
+                alpha = 1,
+                color = "black",
+                position = position_dodge(width = 0.2)
+  ) +
   
   scale_y_continuous(limits = c(0, 1.1),
                      breaks = seq(0, 1, by = 0.5)) +
@@ -448,7 +455,10 @@ plot_rm2 <- ggplot() +
 
 plot_rm2
 
-# GLMM
+# ggsave(file = "plot_rm2.svg", plot = plot_rm2, width = 7, height = 5, units = "in")
+
+
+# GLMM - chose_probe_binary
 data_rm_range$chose_probe_binary <- as.numeric(data_rm_range$choice_display_more == "chose_probe")
 
 data_rm_range$probe_type <- factor(data_rm_range$probe_type, levels = c("radial", "tangential"))
@@ -555,7 +565,7 @@ my_plot_rm_pse <- ggplot()+
     ),
     stat = "identity",
     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 1
+    alpha = 0.8
   ) +
   
   geom_point(
@@ -579,16 +589,16 @@ my_plot_rm_pse <- ggplot()+
       y = mean_delta50,
       ymin = mean_delta50 - delta50_CI,
       ymax = mean_delta50 + delta50_CI,
-      group = probe_type,
-      color = probe_type
+      group = probe_type
     ),
     size  = 0.8,
     width = .00,
     alpha = 1,
+    color = "black",
     position = position_dodge(width = 0.2)
   ) +
   
-  labs(y = "PSE", x = "Probe Arrangement") +
+  labs(y = "PSE bias", x = "Probe Arrangement") +
   
   geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
   
@@ -624,6 +634,9 @@ my_plot_rm_pse <- ggplot()+
 
 
 my_plot_rm_pse
+
+# ggsave(file = "my_plot_rm_pse.svg", plot = my_plot_rm_pse, width = 5, height = 5, units = "in")
+
 
 my_plot_rm_jnd <- ggplot()+
   geom_point(
@@ -661,16 +674,16 @@ my_plot_rm_jnd <- ggplot()+
       y = mean_jnd,
       ymin = mean_jnd - jnd_CI,
       ymax = mean_jnd + jnd_CI,
-      group = probe_type,
-      color = probe_type
+      group = probe_type
     ),
     size  = 0.8,
     width = .00,
     alpha =1,
+    color = "black",
     position = position_dodge(width = 0.2)
   ) +
   
-  labs(y = "JND", x = "Probe Arrangement") +
+  labs(y = "JND - precision", x = "Probe Arrangement") +
   
   geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
   
@@ -705,4 +718,172 @@ my_plot_rm_jnd <- ggplot()+
   )
 
 my_plot_rm_jnd
+
+# ggsave(file = "my_plot_rm_jnd.svg", plot = my_plot_rm_jnd, width = 5, height = 5, units = "in")
+
+
+
+# GLMM -Choose radial binary
+
+data_rm_range2 <- data %>%
+  filter(sector_angle == 0)
+
+to_remove <- c(911343, 309153)
+
+data_rm_range2 <- data_rm_range2 %>% 
+  filter(!participant %in% to_remove)
+
+
+# arrange data
+data_rm_range2 <- data_rm_range2 %>%
+  mutate(
+    # 1 =  chose radial as more numerous, 0 =  chose tangential
+    chose_radial = case_when(
+      choice_display_more == "chose_reference" & reference_type == "radial" ~ 1,
+      choice_display_more == "chose_reference" & reference_type == "tangential" ~ 0,
+      choice_display_more == "chose_probe" & reference_type == "radial" ~ 0,
+      choice_display_more == "chose_probe" & reference_type == "tangential" ~ 1,
+      TRUE ~ NA_real_ 
+    )
+  )
+
+data_rm_range2 <- data_rm_range2 %>%
+  mutate(
+    radial_num = if_else(reference_type == "radial", reference_num, probe_num),
+    tangential_num = if_else(reference_type == "tangential", reference_num, probe_num)
+  )
+
+data_rm_range2 <- data_rm_range2 %>%
+  mutate(
+    diff = radial_num - tangential_num
+  )
+
+data_rm_range2$reference_num <- as.factor(data_rm_range2$reference_num)
+
+# data_rm_range2$reference_num <- as.numeric(as.character(data_rm_range2$reference_num))
+# data_rm_range$reference_num <- scale(data_rm_range$reference_num, center = TRUE, scale = FALSE)
+
+
+model_rm <- glmer(
+  chose_radial ~ diff + reference_num + (1 | participant),
+  data = data_rm_range2,
+  family = binomial
+)
+
+summary(model_rm)
+
+
+ems <- emmeans::emmeans(
+  model_rm,
+  ~ reference_num,
+  at = list(diff = 0),
+  type = "response"
+)
+ems
+
+# prob: when radial and tangential contain the same number of item, participants
+# choose the radial display only 16.7%, 11.9% and 9.0% of the time for set size 3, 4, 5, respectively
+# -> when numerosity is physically equal, participants choose radial as less numerous
+
+
+# arrange data plot
+data_by_subject_rm2<- data_rm_range2 %>% 
+  group_by(reference_num, diff, participant) %>% 
+  summarise(
+    n = n(),
+    prop_choose_radial = mean(chose_radial),
+    .groups = 'drop'
+  )
+
+
+data_across_subject_rm2<- data_by_subject_rm2 %>% 
+  group_by(reference_num, diff) %>% 
+  summarise(
+    mean_prop_radial = mean(prop_choose_radial),
+    sd_prop_radial = sd(prop_choose_radial),
+    n = n(),
+    .groups = 'drop'
+  ) %>% 
+  mutate(
+    sem = sd_prop_radial / sqrt(n),
+    ci = sem * qt(0.975, df = n - 1)
+  )
+
+
+# propotion choose radial
+plot_rm2 <- ggplot() +
+  geom_point(
+    data = data_across_subject_rm2,
+    aes(
+      x = diff,
+      y = mean_prop_radial,
+      color = reference_num,
+      group = reference_num
+    ),
+    size = 4,
+    alpha = 0.7,
+    position = position_dodge(0.2)
+  ) +
+  
+  geom_errorbar(data = data_across_subject_rm2, 
+                aes(x = diff,
+                    y = mean_prop_radial,
+                    ymin = mean_prop_radial - ci,
+                    ymax = mean_prop_radial + ci,
+                    group = reference_num),
+                
+                size  = 0.5,
+                width = .00,
+                color = "black",
+                position = position_dodge(0.2)) +
+  
+  scale_y_continuous(limits = c(0, 1.1),
+                     breaks = seq(0, 1, by = 0.5)) +
+  
+  scale_x_continuous(limits = c(-1.2, 1.2),
+                     breaks = seq(-1, 1, by = 1)) +
+  
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
+  
+
+  scale_color_manual(labels = c("3", "4", "5"),
+                     values = c("#0072B2", "#D55E00", "#5e4c5f"),
+                     name = "Reference Number") +
+  
+  
+  labs(y = "Proportion Choosing Radial", x = "Numerosity Difference(radial - tangential)") + 
+  
+  theme(
+    axis.title.x = element_text(
+      color = "black",
+      size = 14,
+      face = "bold"
+    ),
+    axis.title.y = element_text(
+      color = "black",
+      size = 14,
+      face = "bold"
+    ),
+    panel.border = element_blank(),
+    # remove panel grid lines
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    # remove panel background
+    panel.background = element_blank(),
+    # add axis line
+    axis.line = element_line(colour = "grey"),
+    # x,y axis tick labels
+    axis.text.x = element_text(angle = 0, hjust = 1, size = 12, face = "bold"),
+    axis.text.y = element_text(size = 12, face = "bold"),
+    # legend size
+    legend.title = element_text(size = 12, face = "bold"),
+    legend.text = element_text(size = 10),
+    # facet wrap title
+    strip.text.x = element_text(size = 12, face = "bold"),
+    panel.spacing = unit(1.0, "lines")
+  )
+
+plot_rm2
+
+# ggsave(file = "plot_rm2.svg", plot = plot_rm2, width = 6, height = 5, units = "in")
 

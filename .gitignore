@@ -130,12 +130,12 @@ dmypy.json
 
 
 # some type of files
-*.csv
 *.xlsx
 *.docx
 *.png
 *.svg
 # forders
+
 displays/
 archive/
 .idea/
@@ -144,6 +144,22 @@ run_closinggap_rm_enumeration/
 run_closinggap_rm_enumeration_8locations/
 consent/
 cache/
+data/
+vary_size_protection_zone/
+individual_logistic_fitting/
+merged/
+merged_numtask/
+processed/
+
 
 # R
 .Rhistory
+
+# Ignore specific files
+summary.csv
+displays_withproperties170_530.csv
+displays_withproperties170.csv
+displays_withproperties120.csv
+displays_withproperties.csv
+displays170.csv
+displays120.csv
