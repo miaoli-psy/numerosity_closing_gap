@@ -141,6 +141,7 @@ displays_netural/
 archive/
 .idea/
 run_closinggap1/
+run_closinggap2/
 run_closinggap_rm_enumeration/
 run_closinggap_rm_enumeration_8locations/
 consent/
@@ -149,6 +150,7 @@ data/
 vary_size_protection_zone/
 individual_logistic_fitting/
 merged/
+merged2/
 merged_numtask/
 processed/
 figures/
