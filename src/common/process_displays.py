@@ -1,4 +1,8 @@
 import math
+
+import numpy as np
+
+
 def limit_posi_to_sector(sector_angle_in_deg, direction_in_deg, positions):
     # converts sector angle and direction into radians
     angle_rad = math.radians(sector_angle_in_deg) / 2  # Half on each side
@@ -33,3 +37,11 @@ def mirror_coords(coords):
     list of tuple: (-x, y)。
     """
     return [(-x, y) for x, y in coords]
+
+
+def remove_near_origin(pos_list, radius=100):
+    return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) >= radius]
+
+
+def remove_outside_radius(pos_list, radius=530):
+    return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) <= radius]

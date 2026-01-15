@@ -2,21 +2,9 @@
 import os
 import pandas as pd
 import ast
-import numpy as np
-from tqdm import tqdm
-import multiprocessing
-from concurrent.futures import ProcessPoolExecutor
 from src.common.process_dataframe import insert_new_col, insert_new_col_from_n_cols
-from src.common.process_displays import limit_posi_to_sector, get_len
-
-
-# 移除距离 (0, 0) 小于 100 的点
-def remove_near_origin(pos_list, radius=100):
-    return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) >= radius]
-
-def remove_outside_radius(pos_list, radius=530):
-    return [pos for pos in pos_list if np.hypot(pos[0], pos[1]) <= radius]
-
+from src.common.process_displays import limit_posi_to_sector, get_len, remove_near_origin, \
+    remove_outside_radius
 
 # n_cores
 n_cores = 1

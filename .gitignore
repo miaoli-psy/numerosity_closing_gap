@@ -137,6 +137,7 @@ dmypy.json
 # forders
 
 displays/
+displays_netural/
 archive/
 .idea/
 run_closinggap1/
@@ -150,6 +151,7 @@ individual_logistic_fitting/
 merged/
 merged_numtask/
 processed/
+figures/
 
 
 # R

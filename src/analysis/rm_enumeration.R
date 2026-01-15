@@ -3,7 +3,9 @@ library(ggplot2)
 library(svglite)
 
 setwd("D:/OneDrive/projects/numerosity_closing_gap/src/analysis/")
-data <- readr::read_csv(file.choose()) #D:\OneDrive\projects\numerosity_closing_gap\data\enumeration\data_RMenumeration.csv
+#data <- readr::read_csv(file.choose()) #D:\OneDrive\projects\numerosity_closing_gap\data\enumeration\data_RMenumeration.csv
+
+data <- readr::read_csv("D:/OneDrive/projects/numerosity_closing_gap/data/enumeration/data_RMenumeration.csv")
 
 
 data_by_subject <- data %>% 
