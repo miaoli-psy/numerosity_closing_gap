@@ -143,9 +143,15 @@ plot_psychometric <- ggplot() +
 
   geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
   
-  scale_color_manual(labels = c("radial", "tangential"),
-                     values = c("#BB5566", "#004488"),
-                     name = "Probe Arrangement") +
+  # scale_color_manual(labels = c("radial", "tangential"),
+  #                    values = c("#BB5566", "#004488"),
+  #                    name = "Probe Arrangement") +
+  
+  scale_color_manual(
+    labels = c("radial", "tangential"),
+    values = c("#800074", "#707070"),
+    name   = "Probe Arrangement"
+  ) +
   
     
     labs(y = "Proportion Choosing Probe", x = "Probe Numerosity") + 
@@ -194,6 +200,13 @@ plot_psychometric <- ggplot() +
 
 plot_psychometric
 
+# ggsave(
+#   filename = "plot_psychometric.svg",
+#   plot = plot_psychometric,
+#   width = 10,
+#   height = 6,
+#   dpi = 300
+# )
 
 #  02 numerosity range individual level fit
 
@@ -302,7 +315,7 @@ for (p_id in participants) {
         group = probe_type
       ),
       size  = 4,
-      alpha = 0.5
+      alpha = 0.8
     ) +
     
     geom_line(
@@ -335,11 +348,19 @@ for (p_id in participants) {
     
     geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
     
+    # scale_color_manual(
+    #   labels = c("radial", "tangential"),
+    #   values = c("#BB5566", "#004488"),
+    #   name   = "Probe Arrangement"
+    # ) +
+    
+    
     scale_color_manual(
       labels = c("radial", "tangential"),
-      values = c("#BB5566", "#004488"),
+      values = c("#800074", "#707070"),
       name   = "Probe Arrangement"
     ) +
+    
     
     labs(
       y = "Proportion Choosing Probe",
@@ -387,14 +408,14 @@ for (p_id in participants) {
   print(plot_psychometric_subj)
   
   # # save the figure
-  # file_name <- paste0("psychometric_participant_", p_id, ".png")
-  # ggsave(
-  #   filename = file_name,
-  #   plot = plot_psychometric_subj,
-  #   width = 10,
-  #   height = 6,
-  #   dpi = 300
-  # )
+  file_name <- paste0("psychometric_participant_", p_id, ".svg")
+  ggsave(
+    filename = file_name,
+    plot = plot_psychometric_subj,
+    width = 10,
+    height = 6,
+    dpi = 300
+  )
 
   # print(paste("Saved:", file_name))
 }
@@ -619,7 +640,7 @@ for (p_id in participants) {
   
   print(plot_rm_subj)
   
-  # ---- Optional: save ----
+  # ---- save ----
   # ggsave(
   #   filename = paste0("RM_participant_", p_id, ".png"),
   #   plot     = plot_rm_subj,

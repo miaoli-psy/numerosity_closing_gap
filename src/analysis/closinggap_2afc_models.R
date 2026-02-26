@@ -134,11 +134,16 @@ my_plot_pse <- ggplot()+
   
   labs(y = "PSE bias (PSE - Reference Numerosity)", x = "Reference Numerosity") +
   
-  scale_color_manual(labels = c("radial", "tangential"),
-                     values = c("#BB5566", "#004488"),
-                     name = "Probe Arrangement") +
+  scale_color_manual(
+    labels = c("radial", "tangential"),
+    values = c("#800074", "#707070"),
+    name   = "Probe Arrangement"
+  ) +
+  
   
   scale_y_continuous(limits = c(-10, 11)) +
+  
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   
   theme(
     axis.title.x = element_text(
@@ -603,11 +608,15 @@ my_plot_rm_pse <- ggplot()+
   
   labs(y = "PSE bias", x = "Probe Arrangement") +
   
-  geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   
-  scale_color_manual(labels = c("radial", "tangential"),
-                     values = c("#BB5566", "#004488"),
-                     name = "Probe Arrangement") +
+  
+  scale_color_manual(
+    labels = c("radial", "tangential"),
+    values = c("#800074", "#707070"),
+    name   = "Probe Arrangement"
+  ) +
+  
   
   scale_y_continuous(limits = c(-10, 10)) +
   
