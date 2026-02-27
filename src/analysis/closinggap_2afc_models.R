@@ -26,21 +26,42 @@ pses_subj <- fit_psychometric_subj$par %>%
     WF       = JND / PSE # use jnd/pse instead of jnd/ref_num
   )
 
-
 pses_subj <- pses_subj %>%
-  mutate(slope_at_pse = beta / 4)
+  mutate(
+    PSE_bias_corrected = ifelse(probe_type == "tangential", -PSE_bias, PSE_bias)
+  )
 
-beta_cutoff <- quantile(pses_subj$abs_beta, probs = 0.05, na.rm = TRUE)
-
-pses_subj <- pses_subj %>%
-  filter(abs_beta > beta_cutoff)
+# pses_subj <- pses_subj %>%
+#   mutate(slope_at_pse = beta / 4)
+# 
+# beta_cutoff <- quantile(pses_subj$abs_beta, probs = 0.05, na.rm = TRUE)
+# 
+# pses_subj <- pses_subj %>%
+#   filter(abs_beta > beta_cutoff)
 
 # remove participants that unable to do the task - based on fitting
-to_remove <- c(911343, 309153)
+to_remove <- c(309153, 71282, 719357, 967470, 911343)
 
 
 pses_subj <- pses_subj %>% 
   filter(!participant %in% to_remove)
+
+# pses_subj <- pses_subj %>% 
+#   filter(PSE_bias_corrected > -1)
+# 
+
+# # combine 2 ref-probe configuration
+# anisotropy_df <- pses_subj %>%
+#   select(participant, probe_type, reference_num, PSE_bias, WF) %>%
+#   pivot_wider(
+#     names_from  = probe_type,
+#     values_from = c(PSE_bias, WF),
+#   ) %>%
+#   filter(!is.na(PSE_bias_radial) & !is.na(PSE_bias_tangential)) %>%
+#   mutate(
+#     Anisotropy = (PSE_bias_radial - PSE_bias_tangential)/2
+#   )
+
 
 # remove extreme values: for each ref_num, a pse value was considered an extreme value
 # and excluded if it deviated from the median by more than 2.5 MAD
@@ -49,33 +70,56 @@ pses_subj <- pses_subj %>%
 # more stable when distribution are non-gaussian)
 # 43 trials out of 330 trials are removed (13.0%)
 
-
 pses_subj <- pses_subj %>%
   group_by(reference_num) %>%
   mutate(
-    pse_med = median(PSE, na.rm = TRUE),
-    pse_mad = mad(PSE, na.rm = TRUE),
-    w_med   = median(WF, na.rm = TRUE),
-    w_mad   = mad(WF, na.rm = TRUE),
-    keep    = (abs(PSE - pse_med) <= 2.5 * pse_mad) &
-      (abs(WF  - w_med)  <= 2.5 * w_mad)
+    pse_med = median(PSE_bias_corrected, na.rm = TRUE),
+    pse_mad = mad(PSE_bias_corrected, na.rm = TRUE),
+    keep    = (PSE_bias_corrected >= pse_med - 2.5 * pse_mad) &
+      (PSE_bias_corrected <= pse_med + 2.5 * pse_mad)
   ) %>%
   filter(keep) %>%
   ungroup() %>%
-  select(-pse_med, -pse_mad, -w_med, -w_mad, -keep)
+  select(-pse_med, -pse_mad, -keep)
 
 
-# write.csv(pses_subj, "pses_subj.csv", row.names = FALSE)
+model_anisotropy <- lmer(
+  PSE_bias_corrected ~ factor(reference_num) + (1 | participant),
+  data = pses_subj, REML = TRUE)
+
+summary(model_anisotropy)
+
+sjPlot::tab_model(
+  model_anisotropy,
+  p.style = 'scientific_stars',
+  show.se = T,
+  show.stat = T,
+  digits = 3)
+
+emm <- emmeans::emmeans(model_anisotropy, ~ factor(reference_num))
+emmeans::test(emm, adjust = "holm")  # each estimated marginal mean vs. 0
 
 
-table(pses_subj$participant)
+# Overall test: is anisotropy non-zero across all numerosities?
+# (intercept-only model)
+model_intercept <- lmer(
+  PSE_bias_corrected ~ 1 + (1 | participant),
+  data = pses_subj, REML = TRUE
+)
+summary(model_intercept)  # intercept t-test = overall anisotropy vs. 0
 
+sjPlot::tab_model(
+  model_intercept,
+  p.style = 'scientific_stars',
+  show.se = T,
+  show.stat = T,
+  digits = 3)
 
 average_pses_df <- pses_subj %>% 
-  group_by(probe_type, reference_num) %>% 
+  group_by(reference_num) %>% 
   summarise(
-    PSE_bias_mean = mean(PSE_bias),
-    PSE_bias_std = sd(PSE_bias),
+    PSE_bias_mean = mean(PSE_bias_corrected),
+    PSE_bias_std = sd(PSE_bias_corrected),
     WF_mean = mean(WF),
     WF_std = sd(WF),
     n = n()
@@ -87,19 +131,20 @@ average_pses_df <- pses_subj %>%
     WF_CI = WF_sem * qt((1 - 0.05) / 2 + .5, n - 1)
   )
 
+
+
 my_plot_pse <- ggplot()+
   geom_point(
     data = pses_subj,
     aes(
       x = factor(reference_num),
-      y = PSE_bias,
-      group = probe_type,
-      color = probe_type,
+      y = PSE_bias_corrected,
       size = 3
     ),
     stat = "identity",
+    color  = "#800074",
     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 0.1
+    alpha = 0.05
   ) +
   
   geom_point(
@@ -107,11 +152,10 @@ my_plot_pse <- ggplot()+
     aes(
       x = factor(reference_num),
       y = PSE_bias_mean,
-      group = probe_type,
-      color = probe_type,
       size = 3
     ),
     stat = "identity",
+    color  = "#800074",
     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
     alpha = 0.8
   ) +
@@ -122,8 +166,7 @@ my_plot_pse <- ggplot()+
       x = factor(reference_num),
       y = PSE_bias_mean,
       ymin = PSE_bias_mean - PSE_CI,
-      ymax = PSE_bias_mean + PSE_CI,
-      group = probe_type
+      ymax = PSE_bias_mean + PSE_CI
     ),
     size  = 0.8,
     width = .00,
@@ -132,14 +175,14 @@ my_plot_pse <- ggplot()+
     position = position_dodge(width = 0.2)
   ) +
   
-  labs(y = "PSE bias (PSE - Reference Numerosity)", x = "Reference Numerosity") +
+  labs(y = "PSE Anisotropy (items)", x = "Reference Numerosity") +
   
-  scale_color_manual(
-    labels = c("radial", "tangential"),
-    values = c("#800074", "#707070"),
-    name   = "Probe Arrangement"
-  ) +
-  
+  # scale_color_manual(
+  #   labels = c("radial", "tangential"),
+  #   values = c("#800074", "#707070"),
+  #   name   = "Probe Arrangement"
+  # ) +
+  # 
   
   scale_y_continuous(limits = c(-10, 11)) +
   
@@ -171,6 +214,11 @@ my_plot_pse <- ggplot()+
 
 my_plot_pse
 
+##Positive values indicate that radial arrangements were perceived as 
+##less numerous than tangential arrangements. 
+## PSE bias for tangential-probe trials was sign-reversed so that 
+## both configurations index the same perceptual anisotropy
+
 # ggsave(file = "my_plot_pse.svg", plot = my_plot_pse, width = 7, height = 5, units = "in")
 
 
@@ -183,8 +231,6 @@ my_plot_wf <- ggplot()+
     aes(
       x = factor(reference_num),
       y = WF,
-      group = probe_type,
-      color = probe_type,
       size = 3
     ),
     stat = "identity",
@@ -196,8 +242,6 @@ my_plot_wf <- ggplot()+
     aes(
       x = factor(reference_num),
       y = WF_mean,
-      group = probe_type,
-      color = probe_type,
       size = 3
     ),
     stat = "identity",
@@ -211,8 +255,7 @@ my_plot_wf <- ggplot()+
       x = factor(reference_num),
       y = WF_mean,
       ymin = WF_mean - WF_CI,
-      ymax = WF_mean + WF_CI,
-      group = probe_type
+      ymax = WF_mean + WF_CI
     ),
     size  = 0.8,
     width = .00,
@@ -223,9 +266,6 @@ my_plot_wf <- ggplot()+
   
   labs(y = "Weber fraction", x = "Reference Numerosity") +
   
-  scale_color_manual(labels = c("radial", "tangential"),
-                     values = c("#BB5566", "#004488"),
-                     name = "Probe Arrangement") +
   
   scale_y_continuous(limits = c(0, 0.6)) +
   
@@ -256,78 +296,6 @@ my_plot_wf <- ggplot()+
 my_plot_wf
 
 # ggsave(file = "my_plot_wf.svg", plot = my_plot_wf, width = 7, height = 5, units = "in")
-
-
-# LMM on PSEs
-
-# probe_type to factor
-pses_subj$probe_type <- factor(
-  pses_subj$probe_type,
-  levels = c( "radial", "tangential")
-)
-
-# contrast codind radial -0.5; tangential 0.5
-contrasts(pses_subj$probe_type) <- matrix(
-  c(-0.5, 0.5),
-  ncol = 1)
-
-model_psebias <- lmer(
-  PSE_bias ~ probe_type * reference_num + (1 | participant),
-  data = pses_subj
-)
-
-summary(model_psebias)
-
-sjPlot::tab_model(
-  model_psebias,
-  p.style = 'scientific_stars',
-  show.se = T,
-  show.stat = T,
-  digits = 3)
-
-emm <- emmeans::emmeans(
-  model_psebias,
-  ~ probe_type | reference_num,
-  at = list(reference_num = sort(unique(pses_subj$reference_num)))
-)
-
-contrast_ref <- emmeans::contrast(
-  emm,
-  method = "pairwise",
-  adjust = "holm"  
-)
-
-contrast_ref
-
-# LMM on WFs
-
-model_wf <- lmer(
-  WF ~ probe_type * reference_num + (1 | participant),
-  data = pses_subj
-)
-
-summary(model_wf)
-
-sjPlot::tab_model(
-  model_wf,
-  p.style = 'scientific_stars',
-  show.se = T,
-  show.stat = T,
-  digits = 3)
-
-emm <- emmeans::emmeans(
-  model_wf,
-  ~ probe_type | reference_num,
-  at = list(reference_num = sort(unique(pses_subj$reference_num)))
-)
-
-contrast_ref <- emmeans::contrast(
-  emm,
-  method = "pairwise",
-  adjust = "holm"  
-)
-
-contrast_ref
 
 # ========RM ranges======
 
