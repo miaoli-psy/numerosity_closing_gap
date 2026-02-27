@@ -42,7 +42,6 @@ pses_subj <- pses_subj %>%
 # remove participants that unable to do the task - based on fitting
 to_remove <- c(309153, 71282, 719357, 967470, 911343)
 
-
 pses_subj <- pses_subj %>% 
   filter(!participant %in% to_remove)
 
@@ -142,7 +141,7 @@ my_plot_pse <- ggplot()+
       size = 3
     ),
     stat = "identity",
-    color  = "#800074",
+    color  = "#707070",
     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
     alpha = 0.05
   ) +
@@ -155,7 +154,7 @@ my_plot_pse <- ggplot()+
       size = 3
     ),
     stat = "identity",
-    color  = "#800074",
+    color  = "#707070",
     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
     alpha = 0.8
   ) +
@@ -184,7 +183,7 @@ my_plot_pse <- ggplot()+
   # ) +
   # 
   
-  scale_y_continuous(limits = c(-10, 11)) +
+  scale_y_continuous(limits = c(-2, 11)) +
   
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
   
@@ -219,85 +218,85 @@ my_plot_pse
 ## PSE bias for tangential-probe trials was sign-reversed so that 
 ## both configurations index the same perceptual anisotropy
 
-# ggsave(file = "my_plot_pse.svg", plot = my_plot_pse, width = 7, height = 5, units = "in")
+# ggsave(file = "my_plot_pse.svg", plot = my_plot_pse, width = 5, height = 5, units = "in")
 
 
-# plot wf
-
-my_plot_wf <- ggplot()+
-  
-  geom_point(
-    data = pses_subj,
-    aes(
-      x = factor(reference_num),
-      y = WF,
-      size = 3
-    ),
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 0.1
-  ) +
-  geom_point(
-    data = average_pses_df,
-    aes(
-      x = factor(reference_num),
-      y = WF_mean,
-      size = 3
-    ),
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 1
-  ) +
-  
-  geom_errorbar(
-    data = average_pses_df,
-    aes(
-      x = factor(reference_num),
-      y = WF_mean,
-      ymin = WF_mean - WF_CI,
-      ymax = WF_mean + WF_CI
-    ),
-    size  = 0.8,
-    width = .00,
-    alpha = 1,
-    color = "black",
-    position = position_dodge(width = 0.2)
-  ) +
-  
-  labs(y = "Weber fraction", x = "Reference Numerosity") +
-  
-  
-  scale_y_continuous(limits = c(0, 0.6)) +
-  
-  theme(
-    axis.title.x = element_text(
-      color = "black",
-      size  = 14,
-      face  = "bold"
-    ),
-    axis.title.y = element_text(
-      color = "black",
-      size  = 14,
-      face  = "bold"
-    ),
-    panel.border       = element_blank(),
-    panel.grid.major   = element_blank(),
-    panel.grid.minor   = element_blank(),
-    panel.background   = element_blank(),
-    axis.line          = element_line(colour = "grey"),
-    axis.text.x        = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
-    axis.text.y        = element_text(size = 12, face = "bold"),
-    legend.title       = element_text(size = 12, face = "bold"),
-    legend.text        = element_text(size = 10),
-    strip.text.x       = element_text(size = 12, face = "bold"),
-    panel.spacing      = unit(1.0, "lines")
-  )
-
-my_plot_wf
+# # plot wf
+# 
+# my_plot_wf <- ggplot()+
+#   
+#   geom_point(
+#     data = pses_subj,
+#     aes(
+#       x = factor(reference_num),
+#       y = WF,
+#       size = 3
+#     ),
+#     stat = "identity",
+#     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
+#     alpha = 0.1
+#   ) +
+#   geom_point(
+#     data = average_pses_df,
+#     aes(
+#       x = factor(reference_num),
+#       y = WF_mean,
+#       size = 3
+#     ),
+#     stat = "identity",
+#     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
+#     alpha = 1
+#   ) +
+#   
+#   geom_errorbar(
+#     data = average_pses_df,
+#     aes(
+#       x = factor(reference_num),
+#       y = WF_mean,
+#       ymin = WF_mean - WF_CI,
+#       ymax = WF_mean + WF_CI
+#     ),
+#     size  = 0.8,
+#     width = .00,
+#     alpha = 1,
+#     color = "black",
+#     position = position_dodge(width = 0.2)
+#   ) +
+#   
+#   labs(y = "Weber fraction", x = "Reference Numerosity") +
+#   
+#   
+#   scale_y_continuous(limits = c(0, 0.6)) +
+#   
+#   theme(
+#     axis.title.x = element_text(
+#       color = "black",
+#       size  = 14,
+#       face  = "bold"
+#     ),
+#     axis.title.y = element_text(
+#       color = "black",
+#       size  = 14,
+#       face  = "bold"
+#     ),
+#     panel.border       = element_blank(),
+#     panel.grid.major   = element_blank(),
+#     panel.grid.minor   = element_blank(),
+#     panel.background   = element_blank(),
+#     axis.line          = element_line(colour = "grey"),
+#     axis.text.x        = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
+#     axis.text.y        = element_text(size = 12, face = "bold"),
+#     legend.title       = element_text(size = 12, face = "bold"),
+#     legend.text        = element_text(size = 10),
+#     strip.text.x       = element_text(size = 12, face = "bold"),
+#     panel.spacing      = unit(1.0, "lines")
+#   )
+# 
+# my_plot_wf
 
 # ggsave(file = "my_plot_wf.svg", plot = my_plot_wf, width = 7, height = 5, units = "in")
 
-# ========RM ranges======
+# ======================RM ranges==================
 
 # read data RM range
 data <- readr::read_csv("D:/OneDrive/projects/numerosity_closing_gap/data/closinggap_2afc/data_closinggap_2afc.csv")
@@ -305,7 +304,8 @@ data <- readr::read_csv("D:/OneDrive/projects/numerosity_closing_gap/data/closin
 data_rm_range <- data %>%
   filter(sector_angle == 0)
 
-to_remove <- c(911343, 309153)
+# to_remove <- c(911343, 309153)
+to_remove <- c(309153, 71282, 719357, 967470, 911343)
 
 
 data_rm_range <- data_rm_range %>% 
@@ -317,390 +317,242 @@ data_rm_range <- data_rm_range %>%
     delta = probe_num - reference_num
   )
 
-# plot RM
-data_by_subject_rm2 <- data_rm_range %>% 
-  group_by(probe_type, delta, participant) %>% 
-  summarise(
-    n = n(),
-    prop_choose_probe = mean(choice_display_more == "chose_probe"),
-    .groups = 'drop'
-  )
-
-
-data_across_subject_rm2 <- data_by_subject_rm2 %>% 
-  group_by(probe_type, delta) %>% 
-  summarise(
-    mean_prop_probe = mean(prop_choose_probe),
-    sd_prop_probe = sd(prop_choose_probe),
-    n = n(),
-    .groups = 'drop'
-  ) %>% 
-  mutate(
-    sem = sd_prop_probe / sqrt(n),
-    ci = sem * qt(0.975, df = n - 1)
-  )
-
-plot_rm2 <- ggplot() +
-  
-  geom_point(
-    data = data_by_subject_rm2,
-    aes(
-      x = delta,
-      y = prop_choose_probe,
-      color = probe_type,
-      group = probe_type
-    ),
-    size = 4,
-    alpha = 0.1,
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-  ) +
-  
-  geom_point(
-    data = data_across_subject_rm2,
-    aes(
-      x = delta,
-      y = mean_prop_probe,
-      color = probe_type,
-      group = probe_type
-    ),
-    size = 4,
-    alpha = 0.8,
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-  ) +
-  
-  
-  geom_errorbar(data = data_across_subject_rm2, 
-                aes(x = delta,
-                    y = mean_prop_probe,
-                    ymin = mean_prop_probe - ci,
-                    ymax = mean_prop_probe + ci,
-                    group = probe_type
-                    ),
-                size  = 0.8,
-                width = .00,
-                alpha = 1,
-                color = "black",
-                position = position_dodge(width = 0.2)
-  ) +
-  
-  scale_y_continuous(limits = c(0, 1.1),
-                     breaks = seq(0, 1, by = 0.5)) +
-  
-  scale_x_continuous(limits = c(-1.1, 1.1), breaks = c(-1, 0, 1)) +
-  
-  geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
-  
-  scale_color_manual(labels = c("radial", "tangential"),
-                     values = c("#BB5566", "#004488"),
-                     name = "Probe Arrangement") +
-  
-  
-  labs(y = "Proportion Choosing Probe", x = "Numerosity Difference (Probe - Reference)") + 
-  
-  theme(
-    axis.title.x = element_text(
-      color = "black",
-      size = 14,
-      face = "bold"
-    ),
-    axis.title.y = element_text(
-      color = "black",
-      size = 14,
-      face = "bold"
-    ),
-    panel.border = element_blank(),
-    # remove panel grid lines
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    # remove panel background
-    panel.background = element_blank(),
-    # add axis line
-    axis.line = element_line(colour = "grey"),
-    # x,y axis tick labels
-    axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
-    axis.text.y = element_text(size = 12, face = "bold"),
-    # legend size
-    legend.title = element_text(size = 12, face = "bold"),
-    legend.text = element_text(size = 10),
-    # facet wrap title
-    strip.text.x = element_text(size = 12, face = "bold"),
-    panel.spacing = unit(1.0, "lines")
-  ) 
-
-plot_rm2
-
-# ggsave(file = "plot_rm2.svg", plot = plot_rm2, width = 7, height = 5, units = "in")
-
-
-# GLMM - chose_probe_binary
 data_rm_range$chose_probe_binary <- as.numeric(data_rm_range$choice_display_more == "chose_probe")
 
-data_rm_range$probe_type <- factor(data_rm_range$probe_type, levels = c("radial", "tangential"))
-contrasts(data_rm_range$probe_type) <- matrix(c(-0.5, 0.5), ncol = 1)
 
-glmm_rm <- glmer(
-  chose_probe_binary ~ probe_type * delta + (1 + delta| participant),
+data_rm_range <- data_rm_range %>%
+  mutate(
+    delta_corrected = ifelse(probe_type == "tangential", -delta, delta),
+    # flip the response for tangential trials:
+    # "chose probe" when tangential is probe and delta is negative 
+    # is equivalent to "chose reference" in the flipped frame
+    chose_corrected = ifelse(probe_type == "tangential", 
+                             1 - chose_probe_binary, 
+                             chose_probe_binary)
+  )
+
+glmm_rm_combined <- glmer(
+  chose_corrected ~ delta_corrected + (1 + delta_corrected | participant),
   family = binomial,
   data = data_rm_range
 )
 
-summary(glmm_rm)
+summary(glmm_rm_combined)
 
 sjPlot::tab_model(
-  glmm_rm,
+  glmm_rm_combined,
   p.style = 'scientific_stars',
   show.se = T,
   show.stat = T,
   digits = 3)
 
-emm_delta <- emmeans::emmeans(
-  glmm_rm,
-  ~ probe_type | delta,
-  at = list(delta = c(-1, 0, 1)),
-  type = "response"   # returns probabilities, not log-odds
-)
+# ----group-level PSE ----
+b_fix <- fixef(glmm_rm_combined)
+# PSE = -intercept / slope (the delta at which P = 0.5)
+group_PSE <- -b_fix["(Intercept)"] / b_fix["delta_corrected"]
+group_JND <- log(3) / abs(b_fix["delta_corrected"])
 
-emm_delta
-
-pairwise_contrasts <- emmeans::contrast(
-  emm_delta,
-  method = "pairwise",
-  adjust = "holm"   # or "none" / "fdr"
-)
-
-pairwise_contrasts
-
-#  extract fixed + random effects 
-b_fix <- fixef(glmm_rm)
-re    <- ranef(glmm_rm)$participant  #random intercept and random slope for delta
+cat("Group PSE (anisotropy):", round(group_PSE, 3), "\n")
+cat("Group JND:", round(group_JND, 3), "\n")
 
 
-re_df <- re %>%
+
+# ----  participant-level PSEs ----
+re <- ranef(glmm_rm_combined)$participant
+
+subj_params_rm <- re %>%
   as.data.frame() %>%
-  tibble::rownames_to_column("participant")
+  tibble::rownames_to_column("participant") %>%
+  transmute(
+    participant,
+    intercept = b_fix["(Intercept)"] + `(Intercept)`,
+    slope     = b_fix["delta_corrected"] + delta_corrected,
+    PSE       = -intercept / slope,
+    JND       = log(3) / abs(slope)
+  )
 
-# compute participant-specific params for a given condition
-compute_params <- function(c_value, cond_label) {
-  
-  beta0  <- b_fix["(Intercept)"]
-  betap  <- b_fix["probe_type1"]
-  betad  <- b_fix["delta"]
-  betapd <- b_fix["probe_type1:delta"]
-  
-  re_df %>%
-    transmute(
-      participant,
-      probe_type = cond_label,
-      c = c_value,
-      
-      # participant-specific intercept and delta slope (fixed + random)
-      intercept = (beta0 + `(Intercept)`) + betap * c,
-      slope = (betad + delta)         + betapd * c,
-      
-      # PSE-like delta50%
-      delta50 = -intercept / slope,
-      
-      # JND-like (75–25 definition for logistic)
-      JND = log(3) / abs(slope)
-    )
-}
 
-#  radial = -0.5, tangential = +0.5 
-subj_rad <- compute_params(-0.5, "radial")
-subj_tan <- compute_params( 0.5, "tangential")
+# Check for problematic participants
+subj_params_rm %>%
+  arrange(slope) %>%
+  head(10)
 
-subj_params_rm <- bind_rows(subj_rad, subj_tan)
+subj_params_rm <- subj_params_rm %>%
+  filter(abs(slope) > 0.5)  # adjust threshold as needed
 
-params_rm <- subj_params_rm %>% 
-  group_by(probe_type) %>% 
+# ---- summary stats and plot ----
+params_rm_combined <- subj_params_rm %>%
   summarise(
-    mean_delta50 = mean(delta50),
-    sd_delta50 = sd(delta50),
-    n = n(),
-    mean_jnd = mean(JND),
-    sd_jnd = sd(JND)
-  ) %>% 
-  mutate(
-    delta50_sem = sd_delta50/sqrt(n),
-    delta50_CI = delta50_sem * qt((1 - 0.05) / 2 + .5, n - 1),
-    jnd_sem = sd_jnd/sqrt(n),
-    jnd_CI = jnd_sem * qt((1 - 0.05) / 2 + .5, n - 1)
+    mean_PSE = mean(PSE),
+    sd_PSE   = sd(PSE),
+    n        = n(),
+    sem_PSE  = sd_PSE / sqrt(n),
+    CI_PSE   = sem_PSE * qt(0.975, n - 1)
   )
 
-my_plot_rm_pse <- ggplot()+
-  geom_point(
-    data = params_rm,
-    aes(
-      x = probe_type,
-      y = mean_delta50,
-      group = probe_type,
-      color = probe_type,
-      size = 4
-    ),
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 0.8
-  ) +
-  
+my_plot_rm_combined <- ggplot() +
   geom_point(
     data = subj_params_rm,
-    aes(
-      x = probe_type,
-      y = delta50,
-      group = probe_type,
-      color = probe_type,
-      size = 4
-    ),
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 0.1
+    aes(x = "",
+        y = PSE),
+    color = "#707070",
+    size = 3,
+    alpha = 0.15,
+    position = position_jitter(width = 0.05)
   ) +
-  
+  geom_point(
+    data = params_rm_combined,
+    aes(x = "", 
+        y = mean_PSE),
+    color = "#707070", size = 4
+  ) +
   geom_errorbar(
-    data = params_rm,
-    aes(
-      x = probe_type,
-      y = mean_delta50,
-      ymin = mean_delta50 - delta50_CI,
-      ymax = mean_delta50 + delta50_CI,
-      group = probe_type
-    ),
-    size  = 0.8,
-    width = .00,
-    alpha = 1,
-    color = "black",
-    position = position_dodge(width = 0.2)
+    data = params_rm_combined,
+    aes(x = "", 
+        y = mean_PSE,
+        ymin = mean_PSE - CI_PSE,
+        ymax = mean_PSE + CI_PSE),
+    width = 0, size = 0.8, color = "black"
   ) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
   
-  labs(y = "PSE bias", x = "Probe Arrangement") +
+  scale_y_continuous(limits = c(-2, 11)) +
   
-  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
-  
-  
-  scale_color_manual(
-    labels = c("radial", "tangential"),
-    values = c("#800074", "#707070"),
-    name   = "Probe Arrangement"
-  ) +
-  
-  
-  scale_y_continuous(limits = c(-10, 10)) +
-  
+  labs(y = "PSE Anisotropy (items)", x = "RM Range") +
   theme(
-    axis.title.x = element_text(
-      color = "black",
-      size  = 14,
-      face  = "bold"
-    ),
-    axis.title.y = element_text(
-      color = "black",
-      size  = 14,
-      face  = "bold"
-    ),
+    axis.title.y       = element_text(color = "black", size = 14, face = "bold"),
+    axis.title.x       = element_text(color = "black", size = 14, face = "bold"),
     panel.border       = element_blank(),
     panel.grid.major   = element_blank(),
     panel.grid.minor   = element_blank(),
     panel.background   = element_blank(),
     axis.line          = element_line(colour = "grey"),
-    axis.text.x        = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
     axis.text.y        = element_text(size = 12, face = "bold"),
-    legend.title       = element_text(size = 12, face = "bold"),
-    legend.text        = element_text(size = 10),
-    strip.text.x       = element_text(size = 12, face = "bold"),
-    panel.spacing      = unit(1.0, "lines")
+    axis.text.x        = element_text(size = 12, face = "bold")
   )
 
+my_plot_rm_combined
 
-my_plot_rm_pse
-
-# ggsave(file = "my_plot_rm_pse.svg", plot = my_plot_rm_pse, width = 5, height = 5, units = "in")
+# ggsave(file = "my_plot_rm_combined.svg", plot = my_plot_rm_combined, width = 2, height = 5, units = "in")
 
 
-my_plot_rm_jnd <- ggplot()+
-  geom_point(
-    data = params_rm,
-    aes(
-      x = probe_type,
-      y = mean_jnd,
-      group = probe_type,
-      color = probe_type,
-      size = 4
-    ),
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 1
-  ) +
-  
-  geom_point(
-    data = subj_params_rm,
-    aes(
-      x = probe_type,
-      y = JND,
-      group = probe_type,
-      color = probe_type,
-      size = 4
-    ),
-    stat = "identity",
-    position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
-    alpha = 0.1
-  ) +
-  
-  geom_errorbar(
-    data = params_rm,
-    aes(
-      x = probe_type,
-      y = mean_jnd,
-      ymin = mean_jnd - jnd_CI,
-      ymax = mean_jnd + jnd_CI,
-      group = probe_type
-    ),
-    size  = 0.8,
-    width = .00,
-    alpha =1,
-    color = "black",
-    position = position_dodge(width = 0.2)
-  ) +
-  
-  labs(y = "JND - precision", x = "Probe Arrangement") +
-  
-  geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
-  
-  scale_color_manual(labels = c("radial", "tangential"),
-                     values = c("#BB5566", "#004488"),
-                     name = "Probe Arrangement") +
-  
-  scale_y_continuous(limits = c(-5, 5)) +
-  
-  theme(
-    axis.title.x = element_text(
-      color = "black",
-      size  = 14,
-      face  = "bold"
-    ),
-    axis.title.y = element_text(
-      color = "black",
-      size  = 14,
-      face  = "bold"
-    ),
-    panel.border       = element_blank(),
-    panel.grid.major   = element_blank(),
-    panel.grid.minor   = element_blank(),
-    panel.background   = element_blank(),
-    axis.line          = element_line(colour = "grey"),
-    axis.text.x        = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
-    axis.text.y        = element_text(size = 12, face = "bold"),
-    legend.title       = element_text(size = 12, face = "bold"),
-    legend.text        = element_text(size = 10),
-    strip.text.x       = element_text(size = 12, face = "bold"),
-    panel.spacing      = unit(1.0, "lines")
-  )
 
-my_plot_rm_jnd
 
-# ggsave(file = "my_plot_rm_jnd.svg", plot = my_plot_rm_jnd, width = 5, height = 5, units = "in")
+# # plot RM
+# data_by_subject_rm2 <- data_rm_range %>% 
+#   group_by(probe_type, delta, participant) %>% 
+#   summarise(
+#     n = n(),
+#     prop_choose_probe = mean(choice_display_more == "chose_probe"),
+#     .groups = 'drop'
+#   )
+# 
+# 
+# data_across_subject_rm2 <- data_by_subject_rm2 %>% 
+#   group_by(probe_type, delta) %>% 
+#   summarise(
+#     mean_prop_probe = mean(prop_choose_probe),
+#     sd_prop_probe = sd(prop_choose_probe),
+#     n = n(),
+#     .groups = 'drop'
+#   ) %>% 
+#   mutate(
+#     sem = sd_prop_probe / sqrt(n),
+#     ci = sem * qt(0.975, df = n - 1)
+#   )
+# 
+# plot_rm2 <- ggplot() +
+#   
+#   geom_point(
+#     data = data_by_subject_rm2,
+#     aes(
+#       x = delta,
+#       y = prop_choose_probe,
+#       color = probe_type,
+#       group = probe_type
+#     ),
+#     size = 4,
+#     alpha = 0.1,
+#     stat = "identity",
+#     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
+#   ) +
+#   
+#   geom_point(
+#     data = data_across_subject_rm2,
+#     aes(
+#       x = delta,
+#       y = mean_prop_probe,
+#       color = probe_type,
+#       group = probe_type
+#     ),
+#     size = 4,
+#     alpha = 0.8,
+#     stat = "identity",
+#     position = position_dodge2(width = 0.2, preserve = "single", padding = 0.1),
+#   ) +
+#   
+#   
+#   geom_errorbar(data = data_across_subject_rm2, 
+#                 aes(x = delta,
+#                     y = mean_prop_probe,
+#                     ymin = mean_prop_probe - ci,
+#                     ymax = mean_prop_probe + ci,
+#                     group = probe_type
+#                     ),
+#                 size  = 0.8,
+#                 width = .00,
+#                 alpha = 1,
+#                 color = "black",
+#                 position = position_dodge(width = 0.2)
+#   ) +
+#   
+#   scale_y_continuous(limits = c(0, 1.1),
+#                      breaks = seq(0, 1, by = 0.5)) +
+#   
+#   scale_x_continuous(limits = c(-1.1, 1.1), breaks = c(-1, 0, 1)) +
+#   
+#   geom_hline(yintercept = 0.5, linetype = "dashed", color = "black") +
+#   
+#   scale_color_manual(labels = c("radial", "tangential"),
+#                      values = c("#BB5566", "#004488"),
+#                      name = "Probe Arrangement") +
+#   
+#   
+#   labs(y = "Proportion Choosing Probe", x = "Numerosity Difference (Probe - Reference)") + 
+#   
+#   theme(
+#     axis.title.x = element_text(
+#       color = "black",
+#       size = 14,
+#       face = "bold"
+#     ),
+#     axis.title.y = element_text(
+#       color = "black",
+#       size = 14,
+#       face = "bold"
+#     ),
+#     panel.border = element_blank(),
+#     # remove panel grid lines
+#     panel.grid.major = element_blank(),
+#     panel.grid.minor = element_blank(),
+#     # remove panel background
+#     panel.background = element_blank(),
+#     # add axis line
+#     axis.line = element_line(colour = "grey"),
+#     # x,y axis tick labels
+#     axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
+#     axis.text.y = element_text(size = 12, face = "bold"),
+#     # legend size
+#     legend.title = element_text(size = 12, face = "bold"),
+#     legend.text = element_text(size = 10),
+#     # facet wrap title
+#     strip.text.x = element_text(size = 12, face = "bold"),
+#     panel.spacing = unit(1.0, "lines")
+#   ) 
+# 
+# plot_rm2
 
+# ggsave(file = "plot_rm2.svg", plot = plot_rm2, width = 7, height = 5, units = "in")
 
 
 # GLMM -Choose radial binary
@@ -708,7 +560,8 @@ my_plot_rm_jnd
 data_rm_range2 <- data %>%
   filter(sector_angle == 0)
 
-to_remove <- c(911343, 309153)
+# to_remove <- c(911343, 309153)
+to_remove <- c(309153, 71282, 719357, 967470, 911343)
 
 data_rm_range2 <- data_rm_range2 %>% 
   filter(!participant %in% to_remove)
@@ -801,7 +654,7 @@ plot_rm2 <- ggplot() +
       group = reference_num
     ),
     size = 4,
-    alpha = 0.7,
+    alpha = 0.8,
     position = position_dodge(0.2)
   ) +
   
@@ -812,7 +665,7 @@ plot_rm2 <- ggplot() +
                     ymax = mean_prop_radial + ci,
                     group = reference_num),
                 
-                size  = 0.5,
+                size  = 1,
                 width = .00,
                 color = "black",
                 position = position_dodge(0.2)) +
@@ -866,4 +719,117 @@ plot_rm2 <- ggplot() +
 plot_rm2
 
 # ggsave(file = "plot_rm2.svg", plot = plot_rm2, width = 6, height = 5, units = "in")
+
+
+
+# =======Correlation: PSE anisotropy across numerosity ranges =========
+
+# df large ranges
+aniso_large <- pses_subj %>%
+  group_by(participant, reference_num) %>%
+  summarise(
+    PSE_aniso = mean(PSE_bias_corrected, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+aniso_large_wide <- aniso_large %>%
+  pivot_wider(
+    names_from  = reference_num,
+    values_from = PSE_aniso,
+    names_prefix = "PSE_ref_"
+  )
+
+# df RM ranges
+aniso_rm <- subj_params_rm %>%
+  mutate(participant = as.numeric(participant))  # match type if needed
+
+# df to correlate
+aniso_wide <- inner_join(aniso_large_wide, 
+                         aniso_rm %>% select(participant, PSE_rm = PSE), 
+                         by = "participant")
+
+aniso_wide <- aniso_wide[complete.cases(aniso_wide), ]
+
+
+# correlation matrix
+dat <- aniso_wide %>% select(-participant)
+vars <- names(dat)
+
+r_mat <- matrix(NA_real_, length(vars), length(vars), dimnames = list(vars, vars))
+p_mat <- matrix(NA_real_, length(vars), length(vars), dimnames = list(vars, vars))
+
+
+for (i in seq_along(vars)) {
+  for (j in seq_along(vars)) {
+    ok <- complete.cases(dat[[i]], dat[[j]])
+    if (sum(ok) >= 3) {
+      ct <- cor.test(dat[[i]][ok], dat[[j]][ok], method = "pearson")
+      r_mat[i, j] <- unname(ct$estimate)
+      p_mat[i, j] <- ct$p.value
+    }
+  }
+}
+
+corr_df <- as.data.frame(r_mat) %>%
+  rownames_to_column("var1") %>%
+  pivot_longer(-var1, names_to = "var2", values_to = "r") %>%
+  left_join(
+    as.data.frame(p_mat) %>%
+      rownames_to_column("var1") %>%
+      pivot_longer(-var1, names_to = "var2", values_to = "p"),
+    by = c("var1", "var2")
+  ) %>%
+  mutate(
+    sig_star = case_when(
+      p < 0.001 ~ "***",
+      p < 0.01  ~ "**",
+      p < 0.05  ~ "*",
+      TRUE      ~ ""
+    ),
+    sig_star = if_else(var1 == var2, "", sig_star)
+  )
+
+# order of var names
+var_order <- c(
+  "PSE_rm",
+  "PSE_ref_9",
+  "PSE_ref_13",
+  "PSE_ref_18",
+  "PSE_ref_24",
+  "PSE_ref_30"
+)
+
+corr_df <- corr_df %>%
+  mutate(
+    var1 = factor(var1, levels = var_order),
+    var2 = factor(var2, levels = var_order)
+  )
+
+# plot
+ggplot(corr_df, aes(x = var1, y = var2, fill = r)) +
+  geom_tile(
+    data = subset(corr_df, as.integer(var1) >= as.integer(var2)),
+    color = "white", linewidth = 0.4
+  ) +
+  scale_fill_gradient2(
+    low = "#2166AC", mid = "white", high = "#B2182B",
+    midpoint = 0, limits = c(-1, 1), name = "r"
+  ) +
+  geom_text(
+    data = subset(corr_df, as.integer(var1) >= as.integer(var2)),
+    aes(label = sprintf("%.2f", r)),
+    size = 3, color = "black"
+  ) +
+  geom_text(
+    data = subset(corr_df, as.integer(var1) >= as.integer(var2)),
+    aes(label = sig_star),
+    size = 5, vjust = -0.2, color = "black"
+  ) +
+  coord_equal() +
+  labs(x = NULL, y = NULL) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
 
